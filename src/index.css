@@ -1,0 +1,349 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,300;1,8..60,400&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* GRATIA NOVEM - Catholic Novena Prayer App Design System
+   A reverent, serene design with warm ivory, deep navy, and subtle gold accents.
+   All colors are HSL.
+*/
+
+@layer base {
+  :root {
+    /* Core Background Colors - Warm Ivory/Cream */
+    --background: 45 40% 97%;
+    --foreground: 220 30% 15%;
+
+    /* Card surfaces - slightly warmer */
+    --card: 45 35% 98%;
+    --card-foreground: 220 30% 15%;
+
+    /* Popover */
+    --popover: 45 40% 99%;
+    --popover-foreground: 220 30% 15%;
+
+    /* Primary - Deep Navy */
+    --primary: 215 45% 25%;
+    --primary-foreground: 45 40% 97%;
+
+    /* Secondary - Soft sage/muted navy */
+    --secondary: 210 20% 92%;
+    --secondary-foreground: 215 45% 25%;
+
+    /* Muted - Soft cream */
+    --muted: 45 25% 92%;
+    --muted-foreground: 220 15% 45%;
+
+    /* Accent - Warm Gold */
+    --accent: 43 75% 50%;
+    --accent-foreground: 220 30% 12%;
+
+    /* Destructive */
+    --destructive: 0 65% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Border and Input */
+    --border: 45 20% 88%;
+    --input: 45 20% 88%;
+    --ring: 215 45% 35%;
+
+    /* Radius - Soft rounded corners */
+    --radius: 0.75rem;
+
+    /* Sidebar */
+    --sidebar-background: 45 35% 96%;
+    --sidebar-foreground: 220 30% 20%;
+    --sidebar-primary: 215 45% 25%;
+    --sidebar-primary-foreground: 45 40% 97%;
+    --sidebar-accent: 45 25% 92%;
+    --sidebar-accent-foreground: 215 45% 25%;
+    --sidebar-border: 45 20% 88%;
+    --sidebar-ring: 215 45% 35%;
+
+    /* Custom Semantic Colors for GRATIA NOVEM */
+    --gold: 43 75% 50%;
+    --gold-light: 43 70% 70%;
+    --gold-dark: 43 80% 35%;
+    --navy: 215 45% 25%;
+    --navy-light: 215 35% 45%;
+    --navy-dark: 215 50% 15%;
+    --ivory: 45 40% 97%;
+    --ivory-dark: 45 35% 90%;
+    --sage: 150 15% 70%;
+    --sage-light: 150 15% 85%;
+    
+    /* Prayer specific */
+    --prayer-bg: 45 35% 95%;
+    --prayer-border: 43 60% 75%;
+    --quote-bg: 45 30% 93%;
+    --intention-bg: 215 25% 95%;
+
+    /* Typography scale */
+    --font-display: 'Cormorant Garamond', Georgia, serif;
+    --font-body: 'Source Serif 4', Georgia, serif;
+  }
+
+  .dark {
+    --background: 220 25% 10%;
+    --foreground: 45 30% 92%;
+
+    --card: 220 25% 12%;
+    --card-foreground: 45 30% 92%;
+
+    --popover: 220 25% 12%;
+    --popover-foreground: 45 30% 92%;
+
+    --primary: 43 70% 55%;
+    --primary-foreground: 220 25% 10%;
+
+    --secondary: 220 20% 18%;
+    --secondary-foreground: 45 30% 92%;
+
+    --muted: 220 20% 18%;
+    --muted-foreground: 220 15% 60%;
+
+    --accent: 43 70% 55%;
+    --accent-foreground: 220 25% 10%;
+
+    --destructive: 0 60% 45%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 20% 20%;
+    --input: 220 20% 20%;
+    --ring: 43 70% 55%;
+
+    --sidebar-background: 220 25% 12%;
+    --sidebar-foreground: 45 30% 92%;
+    --sidebar-primary: 43 70% 55%;
+    --sidebar-primary-foreground: 220 25% 10%;
+    --sidebar-accent: 220 20% 18%;
+    --sidebar-accent-foreground: 45 30% 92%;
+    --sidebar-border: 220 20% 20%;
+    --sidebar-ring: 43 70% 55%;
+
+    --gold: 43 70% 55%;
+    --gold-light: 43 65% 65%;
+    --gold-dark: 43 75% 40%;
+    --navy: 215 35% 70%;
+    --navy-light: 215 30% 80%;
+    --navy-dark: 215 40% 50%;
+    --ivory: 45 30% 92%;
+    --ivory-dark: 45 25% 85%;
+    --sage: 150 12% 50%;
+    --sage-light: 150 10% 65%;
+
+    --prayer-bg: 220 22% 14%;
+    --prayer-border: 43 50% 40%;
+    --quote-bg: 220 22% 16%;
+    --intention-bg: 215 25% 18%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body antialiased;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+
+  /* Typography - Display/Heading Font */
+  h1, h2, h3, h4, h5, h6,
+  .font-display {
+    font-family: var(--font-display);
+    @apply tracking-tight;
+  }
+
+  .font-body {
+    font-family: var(--font-body);
+  }
+
+  /* Elegant selection */
+  ::selection {
+    @apply bg-accent/30 text-foreground;
+  }
+
+  /* Focus styles for accessibility */
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+}
+
+@layer components {
+  /* Prayer Card Styles */
+  .prayer-card {
+    @apply bg-prayer-bg border border-prayer-border/40 rounded-xl p-6 md:p-8;
+    @apply shadow-sm;
+  }
+
+  .quote-block {
+    @apply bg-quote-bg border-l-4 border-gold px-6 py-4 my-6 italic;
+    @apply rounded-r-lg;
+  }
+
+  .intention-block {
+    @apply bg-intention-bg border border-navy/10 rounded-xl p-6;
+    @apply shadow-inner;
+  }
+
+  /* Progress bar styling */
+  .progress-step {
+    @apply w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium;
+    @apply transition-all duration-300 ease-out;
+  }
+
+  .progress-step-completed {
+    @apply bg-gold text-foreground;
+  }
+
+  .progress-step-current {
+    @apply bg-primary text-primary-foreground ring-4 ring-primary/20;
+  }
+
+  .progress-step-pending {
+    @apply bg-muted text-muted-foreground;
+  }
+
+  /* Checkbox satisfying animation */
+  .checklist-item {
+    @apply transition-all duration-200 ease-out;
+  }
+
+  .checklist-item[data-checked="true"] {
+    @apply opacity-70;
+  }
+
+  /* Decorative divider */
+  .divider-ornate {
+    @apply flex items-center justify-center gap-4 my-8;
+  }
+
+  .divider-ornate::before,
+  .divider-ornate::after {
+    content: "";
+    @apply flex-1 h-px bg-gradient-to-r from-transparent via-border to-transparent;
+  }
+
+  /* Hero gradient */
+  .hero-gradient {
+    background: linear-gradient(
+      180deg,
+      hsl(var(--ivory)) 0%,
+      hsl(var(--ivory-dark)) 100%
+    );
+  }
+
+  .dark .hero-gradient {
+    background: linear-gradient(
+      180deg,
+      hsl(var(--background)) 0%,
+      hsl(220 25% 8%) 100%
+    );
+  }
+
+  /* Gold shimmer effect */
+  .gold-shimmer {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--gold)) 0%,
+      hsl(var(--gold-light)) 50%,
+      hsl(var(--gold)) 100%
+    );
+    background-size: 200% auto;
+    animation: shimmer 3s ease-in-out infinite;
+  }
+
+  @keyframes shimmer {
+    0%, 100% { background-position: 0% center; }
+    50% { background-position: 200% center; }
+  }
+
+  /* Quiet mode - reduced motion */
+  .quiet-mode * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@layer utilities {
+  /* Custom shadows */
+  .shadow-soft {
+    box-shadow: 0 4px 20px -4px hsl(var(--navy) / 0.08),
+                0 2px 8px -2px hsl(var(--navy) / 0.04);
+  }
+
+  .shadow-gold {
+    box-shadow: 0 4px 20px -4px hsl(var(--gold) / 0.25),
+                0 2px 8px -2px hsl(var(--gold) / 0.15);
+  }
+
+  /* Text utilities */
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Fade animations */
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
+  }
+
+  .animate-fade-in-up {
+    animation: fadeInUp 0.6s ease-out forwards;
+  }
+
+  .animate-fade-in-delay-1 {
+    animation: fadeIn 0.5s ease-out 0.1s forwards;
+    opacity: 0;
+  }
+
+  .animate-fade-in-delay-2 {
+    animation: fadeIn 0.5s ease-out 0.2s forwards;
+    opacity: 0;
+  }
+
+  .animate-fade-in-delay-3 {
+    animation: fadeIn 0.5s ease-out 0.3s forwards;
+    opacity: 0;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes fadeInUp {
+    from { 
+      opacity: 0; 
+      transform: translateY(20px);
+    }
+    to { 
+      opacity: 1; 
+      transform: translateY(0);
+    }
+  }
+
+  /* Scale animation for checkboxes */
+  .animate-check {
+    animation: checkPop 0.3s ease-out;
+  }
+
+  @keyframes checkPop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+  }
+
+  /* Decorative cross ornament */
+  .ornament-cross::before {
+    content: "✝";
+    @apply text-gold/60;
+  }
+}
