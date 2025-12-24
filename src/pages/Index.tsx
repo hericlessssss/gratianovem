@@ -17,7 +17,7 @@ const Index = () => {
           <div className="max-w-3xl mx-auto text-center space-y-8 animate-fade-in-up">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-gold/10 rounded-full text-gold text-sm font-medium">
               <span className="ornament-cross"></span>
-              <span>Novena de São José Disponível Operário</span>
+              <span>Novena de São José Operário Disponível</span>
             </div>
             
             <h1 className="font-display text-4xl md:text-6xl lg:text-7xl font-semibold text-primary leading-tight text-balance">
@@ -57,11 +57,11 @@ const Index = () => {
             <div className="prayer-card text-center">
               <span className="text-gold text-4xl mb-4 block">✝</span>
               <h2 className="font-display text-2xl md:text-3xl font-semibold text-primary mb-4">
-                Novena de São José
+                Novena de São José Operário
               </h2>
               <p className="text-muted-foreground mb-8 max-w-xl mx-auto">
                 São José, esposo de Maria e pai adotivo de Jesus, é um poderoso intercessor. 
-                Esta novena de 9 dias convida você a buscar sua proteção e orientação.
+                Esta novena de 9 dias convida você a buscar sua proteção e orientação em busca de um trabalho.
               </p>
               <Button asChild variant="gold" size="lg">
                 <Link to="/novenas">
