@@ -17,18 +17,18 @@ const Index = () => {
           <div className="max-w-3xl mx-auto text-center space-y-8 animate-fade-in-up">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-gold/10 rounded-full text-gold text-sm font-medium">
               <span className="ornament-cross"></span>
-              <span>Novena de São José Disponível</span>
+              <span>Novena de São José Disponível Operário</span>
             </div>
             
             <h1 className="font-display text-4xl md:text-6xl lg:text-7xl font-semibold text-primary leading-tight text-balance">
               Caminhe em Oração,
               <br />
-              <span className="text-gold">Um Dia de Cada Vez</span>
+              <span className="text-gold">Um dia de cada vez...</span>
             </h1>
             
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-              Gratia Novem guia você através de novenas sagradas com orações diárias, 
-              checklists e acompanhamento de progresso. Comece sua jornada espiritual hoje.
+              Gratia Novem guia você através de novenas com orações diárias, 
+              checklists e acompanhamento de progresso. Comece sua jornada em busca da sua graça hoje.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
@@ -78,10 +78,10 @@ const Index = () => {
       <section className="py-20 bg-primary text-primary-foreground">
         <div className="container text-center">
           <h2 className="font-display text-3xl md:text-4xl font-semibold mb-4">
-            Comece sua Jornada de Fé
+            Comece sua Jornada
           </h2>
           <p className="text-primary-foreground/80 mb-8 max-w-xl mx-auto">
-            Não é necessário criar conta. Comece a orar imediatamente e vincule seu email quando quiser.
+            Não é necessário criar conta. Comece a rezar imediatamente e vincule seu email quando quiser.
           </p>
           <Button asChild variant="gold" size="xl">
             <Link to="/novenas">
