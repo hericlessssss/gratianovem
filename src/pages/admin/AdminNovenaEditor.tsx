@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Save, Loader2, Plus, Eye, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -357,8 +358,13 @@ const AdminNovenaEditor = () => {
               <ArrowLeft className="h-4 w-4" />
               Voltar
             </Link>
-            <h1 className="font-display text-2xl font-semibold text-primary">
+            <h1 className="font-display text-2xl font-semibold text-primary flex items-center gap-2">
               Editar: {novena.title_pt || novena.title}
+              {!novena.is_active ? (
+                <Badge variant="destructive" className="text-xs">Inativa</Badge>
+              ) : (
+                <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600 border-green-200">Ativa</Badge>
+              )}
             </h1>
           </div>
           <div className="flex items-center gap-2">

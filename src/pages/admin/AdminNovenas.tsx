@@ -69,7 +69,7 @@ const AdminNovenas = () => {
           title_pt: newNovena.title_pt,
           slug: newNovena.slug,
           duration: 9,
-          is_active: false,
+          is_active: true,
         })
         .select()
         .single();

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, BookOpen, Heart, Shield } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Layout from '@/components/layout/Layout';
 
@@ -33,7 +33,7 @@ const Index = () => {
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
               <Button asChild variant="hero-gold" size="xl">
-                <Link to="/novenas">
+                <Link to="/novena/novena-sao-jose-operario">
                   Iniciar Novena
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
@@ -48,55 +48,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* How It Works */}
-      <section className="py-20 bg-card">
-        <div className="container">
-          <div className="text-center mb-16">
-            <h2 className="font-display text-3xl md:text-4xl font-semibold text-primary mb-4">
-              Como Funciona
-            </h2>
-            <p className="text-muted-foreground max-w-xl mx-auto">
-              Uma experiência de oração simples e reverente para guiar sua jornada espiritual
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-            {[
-              {
-                icon: BookOpen,
-                title: "Escolha uma Novena",
-                description: "Selecione entre nossas novenas disponíveis. Cada uma oferece 9 dias de orações guiadas."
-              },
-              {
-                icon: Heart,
-                title: "Ore Diariamente",
-                description: "Siga as orações do dia com checklist para Pai Nosso, Ave Maria e outras orações."
-              },
-              {
-                icon: Shield,
-                title: "Acompanhe seu Progresso",
-                description: "Seu progresso é salvo automaticamente. Vincule um email para sincronizar entre dispositivos."
-              }
-            ].map((item, i) => (
-              <div 
-                key={i} 
-                className="text-center p-8 rounded-2xl bg-background shadow-soft animate-fade-in-delay-1"
-                style={{ animationDelay: `${i * 0.1}s` }}
-              >
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gold/10 text-gold mb-6">
-                  <item.icon className="h-8 w-8" />
-                </div>
-                <h3 className="font-display text-xl font-semibold text-foreground mb-3">
-                  {item.title}
-                </h3>
-                <p className="text-muted-foreground text-sm leading-relaxed">
-                  {item.description}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+
 
       {/* Featured Novena */}
       <section className="py-20">

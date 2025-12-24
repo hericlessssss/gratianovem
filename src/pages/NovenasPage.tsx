@@ -4,8 +4,11 @@ import { Button } from '@/components/ui/button';
 import Layout from '@/components/layout/Layout';
 import { useNovenas } from '@/hooks/useNovena';
 
+import { useAuth } from '@/contexts/AuthContext';
+
 const NovenasPage = () => {
   const { data: novenas, isLoading, error } = useNovenas();
+  const { isAdmin } = useAuth();
 
   return (
     <Layout>
@@ -63,9 +66,22 @@ const NovenasPage = () => {
         ) : (
           <div className="text-center py-12">
             <span className="text-gold text-4xl block mb-4">✝</span>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground mb-4">
               Nenhuma novena disponível no momento.
             </p>
+            {isAdmin && (
+              <div className="bg-muted/50 p-6 rounded-lg max-w-md mx-auto border border-border">
+                <p className="font-medium text-foreground mb-2">Painel do Administrador</p>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Se você criou novenas mas elas não aparecem aqui, verifique se elas estão marcadas como "Ativa" no editor.
+                </p>
+                <Button asChild variant="outline" className="w-full">
+                  <Link to="/admin/novenas">
+                    Gerenciar Novenas
+                  </Link>
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </div>
