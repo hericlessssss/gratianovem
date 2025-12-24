@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Mail, Lock, Shield, User, LogOut, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,10 +15,12 @@ const SettingsPage = () => {
   const [password, setPassword] = useState('');
   const [isLinking, setIsLinking] = useState(false);
   const [quietMode, setQuietMode] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const handleLinkEmail = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLinking(true);
+    setSuccessMessage(null);
 
     const { error } = await linkEmail(email, password);
     setIsLinking(false);
@@ -29,12 +32,23 @@ const SettingsPage = () => {
         variant: "destructive",
       });
     } else {
+      const message = isAnonymous 
+        ? "Sua conta foi vinculada com sucesso! Por favor, faça login para confirmar."
+        : "Conta criada com sucesso! Verifique seu email para confirmar.";
+      
+      setSuccessMessage(message);
       toast({
-        title: "Email vinculado!",
-        description: "Seu progresso agora está protegido.",
+        title: "Sucesso!",
+        description: message,
       });
       setEmail('');
       setPassword('');
+      
+      // Optional: Sign out to force re-login flow if desired, 
+      // but usually we just want to show the button.
+      if (isAnonymous) {
+        await signOut();
+      }
     }
   };
 
@@ -87,45 +101,60 @@ const SettingsPage = () => {
                 </div>
 
                 <form onSubmit={handleLinkEmail} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="seu@email.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                        className="pl-10"
-                      />
+                  {successMessage ? (
+                    <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4 text-center space-y-3 animate-fade-in">
+                      <p className="text-green-600 font-medium text-sm">
+                        {successMessage}
+                      </p>
+                      <Button asChild variant="gold" className="w-full">
+                        <Link to="/auth">
+                          Ir para Login
+                        </Link>
+                      </Button>
                     </div>
-                  </div>
+                  ) : (
+                    <>
+                      <div className="space-y-2">
+                        <Label htmlFor="email">Email</Label>
+                        <div className="relative">
+                          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            id="email"
+                            type="email"
+                            placeholder="seu@email.com"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
+                            className="pl-10"
+                          />
+                        </div>
+                      </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="password">Criar Senha</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="password"
-                        type="password"
-                        placeholder="••••••••"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                        minLength={6}
-                        className="pl-10"
-                      />
-                    </div>
-                  </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="password">Criar Senha</Label>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            id="password"
+                            type="password"
+                            placeholder="••••••••"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+                            minLength={6}
+                            className="pl-10"
+                          />
+                        </div>
+                      </div>
 
-                  <Button type="submit" variant="gold" disabled={isLinking}>
-                    {isLinking ? (
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    ) : null}
-                    Vincular Email
-                  </Button>
+                      <Button type="submit" variant="gold" disabled={isLinking}>
+                        {isLinking ? (
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        ) : null}
+                        {isAnonymous ? 'Vincular Email' : 'Criar Conta'}
+                      </Button>
+                    </>
+                  )}
                 </form>
               </>
             ) : (

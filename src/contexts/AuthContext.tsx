@@ -119,20 +119,64 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const linkEmail = async (email: string, password: string) => {
-    const { error } = await supabase.auth.updateUser({
-      email,
-      password,
-    });
-    
-    if (!error && profile) {
-      // Update profile to mark as non-anonymous
-      await supabase
-        .from('profiles')
-        .update({ email, is_anonymous: false })
-        .eq('user_id', user?.id);
+    try {
+      // Scenario 1: User is logged in (Anonymous) -> Link/Update Account
+      if (user) {
+        const { data, error } = await supabase.auth.updateUser({
+          email,
+          password,
+        });
+
+        if (error) throw error;
+
+        if (data.user) {
+          // Update profile to mark as non-anonymous
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .update({ 
+              email, 
+              is_anonymous: false,
+              updated_at: new Date().toISOString()
+            })
+            .eq('user_id', data.user.id);
+            
+          if (profileError) {
+            console.error('Erro ao atualizar perfil:', profileError);
+          }
+          
+          await supabase.auth.refreshSession();
+        }
+        return { error: null };
+      } 
+      
+      // Scenario 2: No user logged in -> Create New Account (SignUp)
+      else {
+        const redirectUrl = `${window.location.origin}/`;
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: redirectUrl,
+            data: {
+              display_name: 'Peregrino', // Default name
+            },
+          },
+        });
+
+        if (error) throw error;
+        
+        // If auto-confirm is on, session might be established immediately
+        if (data.session) {
+          setSession(data.session);
+          setUser(data.session.user);
+        }
+
+        return { error: null };
+      }
+    } catch (err) {
+      console.error('Erro ao processar conta:', err);
+      return { error: err as Error };
     }
-    
-    return { error: error as Error | null };
   };
 
   const signOut = async () => {
