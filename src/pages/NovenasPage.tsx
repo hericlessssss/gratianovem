@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import Layout from '@/components/layout/Layout';
 import { useNovenas, useMyRuns } from '@/hooks/useNovena';
 import { useAuth } from '@/contexts/AuthContext';
+import ChristianCross from '@/components/ui/ChristianCross';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -98,18 +99,18 @@ const NovenasPage = () => {
                     key={novena.id}
                     className="prayer-card hover:shadow-lg transition-shadow animate-fade-in-up"
                   >
-                    <div className="flex items-start gap-6">
-                      <div className="w-20 h-20 rounded-xl bg-gold/10 flex items-center justify-center text-gold text-3xl shrink-0">
-                        ✝
+                    <div className="flex items-start gap-4 md:gap-6">
+                      <div className="w-16 h-16 md:w-20 md:h-20 rounded-xl bg-gold/10 flex items-center justify-center text-gold shrink-0">
+                        <ChristianCross className="h-6 w-6 md:h-8 md:w-8" />
                       </div>
                       <div className="flex-1">
-                        <h2 className="font-display text-2xl font-semibold text-primary mb-2">
+                        <h2 className="font-display text-lg md:text-2xl font-semibold text-primary mb-2 line-clamp-2">
                           {novena.title_pt || novena.title}
                         </h2>
-                        <p className="text-muted-foreground text-sm mb-4">
+                        <p className="text-muted-foreground text-xs md:text-sm mb-4 line-clamp-3">
                           {novena.description_pt || novena.description}
                         </p>
-                        <div className="flex items-center gap-4">
+                        <div className="flex flex-wrap items-center gap-3 md:gap-4">
                           <span className="text-xs text-muted-foreground bg-muted px-3 py-1 rounded-full">
                             {novena.duration} dias
                           </span>
@@ -140,15 +141,15 @@ const NovenasPage = () => {
 
             {/* Request Novena Section */}
             <div className="prayer-card hover:shadow-lg transition-shadow animate-fade-in-up mt-8">
-              <div className="flex items-start gap-6">
-                <div className="w-20 h-20 rounded-xl bg-gold/10 flex items-center justify-center text-gold text-3xl shrink-0">
-                  <MessageCircle className="w-8 h-8" />
+              <div className="flex items-start gap-4 md:gap-6">
+                <div className="w-16 h-16 md:w-20 md:h-20 rounded-xl bg-gold/10 flex items-center justify-center text-gold shrink-0">
+                  <MessageCircle className="w-6 h-6 md:w-8 md:h-8" />
                 </div>
                 <div className="flex-1">
-                  <h2 className="font-display text-2xl font-semibold text-primary mb-2">
+                  <h2 className="font-display text-lg md:text-2xl font-semibold text-primary mb-2">
                     Não encontrou a novena que procurava?
                   </h2>
-                  <p className="text-muted-foreground text-sm mb-4">
+                  <p className="text-muted-foreground text-xs md:text-sm mb-4">
                     Entre em contato conosco! Ficaremos felizes em adicionar sua novena favorita ao aplicativo o mais rápido possível.
                   </p>
                   <div className="flex flex-wrap items-center gap-3">
@@ -161,7 +162,7 @@ const NovenasPage = () => {
                     <Button variant="outline" size="sm" className="gap-2" asChild>
                       <a href="mailto:contato@gratianovem.com.br?subject=Sugestão de Novena">
                         <Mail className="h-4 w-4" />
-                        Enviar Sugestão via Email
+                        Via Email
                       </a>
                     </Button>
                   </div>
@@ -171,7 +172,9 @@ const NovenasPage = () => {
           </div>
         ) : (
           <div className="text-center py-12">
-            <span className="text-gold text-4xl block mb-4">✝</span>
+            <div className="text-gold flex justify-center mb-4">
+              <ChristianCross className="h-10 w-10 md:h-12 md:w-12" />
+            </div>
             <p className="text-muted-foreground mb-4">
               {searchTerm ? "Nenhuma novena encontrada com este termo." : "Nenhuma novena disponível no momento."}
             </p>

@@ -9,6 +9,7 @@ import Layout from '@/components/layout/Layout';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import ChristianCross from '@/components/ui/ChristianCross';
 
 const MAX_BODY_LENGTH = 1000;
 
@@ -103,8 +104,10 @@ const NewTestimonialPage = () => {
         </Link>
 
         <div className="text-center mb-8">
-          <span className="text-gold text-3xl block mb-4">✝</span>
-          <h1 className="font-display text-3xl font-semibold text-primary mb-2">
+          <div className="text-gold flex justify-center mb-4">
+            <ChristianCross className="h-10 w-10" />
+          </div>
+          <h1 className="font-display text-2xl md:text-3xl font-semibold text-primary mb-2">
             Compartilhe seu Testemunho
           </h1>
           <p className="text-muted-foreground">

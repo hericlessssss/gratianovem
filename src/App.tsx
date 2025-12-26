@@ -17,6 +17,8 @@ import AdminNovenaEditor from "./pages/admin/AdminNovenaEditor";
 import AdminTestimonials from "./pages/admin/AdminTestimonials";
 import NotFound from "./pages/NotFound";
 
+import ScrollToTop from "./components/ScrollToTop";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -26,6 +28,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <ScrollToTop />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/novenas" element={<NovenasPage />} />

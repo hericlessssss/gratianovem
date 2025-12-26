@@ -11,6 +11,8 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useAuth } from '@/contexts/AuthContext';
 
+import ChristianCross from '@/components/ui/ChristianCross';
+
 const Header = () => {
   const { user, isAnonymous, isAdmin, signOut } = useAuth();
 
@@ -19,7 +21,9 @@ const Header = () => {
       <div className="container flex h-16 items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2">
-          <span className="text-gold text-xl">✝</span>
+          <div className="text-gold">
+            <ChristianCross className="h-5 w-5 md:h-6 md:w-6" />
+          </div>
           <span className="font-display text-xl font-semibold text-primary tracking-wide">
             GRATIA NOVEM
           </span>
@@ -27,19 +31,19 @@ const Header = () => {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-6">
-          <Link 
-            to="/novenas" 
+          <Link
+            to="/novenas"
             className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
             Novenas
           </Link>
-          <Link 
-            to="/testimonials" 
+          <Link
+            to="/testimonials"
             className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
             Testemunhos
           </Link>
-          
+
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -96,30 +100,30 @@ const Header = () => {
           </SheetTrigger>
           <SheetContent side="right" className="w-72">
             <div className="flex flex-col gap-6 mt-8">
-              <Link 
-                to="/novenas" 
+              <Link
+                to="/novenas"
                 className="text-lg font-display font-medium text-foreground hover:text-gold transition-colors"
               >
                 Novenas
               </Link>
-              <Link 
-                to="/testimonials" 
+              <Link
+                to="/testimonials"
                 className="text-lg font-display font-medium text-foreground hover:text-gold transition-colors"
               >
                 Testemunhos
               </Link>
-              
+
               {user ? (
                 <>
-                  <Link 
-                    to="/settings" 
+                  <Link
+                    to="/settings"
                     className="text-lg font-display font-medium text-foreground hover:text-gold transition-colors"
                   >
                     Configurações
                   </Link>
                   {isAdmin && (
-                    <Link 
-                      to="/admin" 
+                    <Link
+                      to="/admin"
                       className="text-lg font-display font-medium text-foreground hover:text-gold transition-colors"
                     >
                       Administração

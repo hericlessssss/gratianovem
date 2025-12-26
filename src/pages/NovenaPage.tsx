@@ -21,6 +21,7 @@ import {
 import { toast } from '@/hooks/use-toast';
 import { format, addDays, isBefore, startOfDay, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import ChristianCross from '@/components/ui/ChristianCross';
 
 const NovenaPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -272,7 +273,9 @@ const NovenaPage = () => {
         {/* Start Novena CTA */}
         {!run && (
           <div className="prayer-card text-center mb-8">
-            <span className="text-gold text-3xl block mb-4">✝</span>
+            <div className="text-gold flex justify-center mb-4">
+              <ChristianCross className="h-8 w-8" />
+            </div>
             <h2 className="font-display text-xl font-semibold text-primary mb-2">
               Iniciar Novena
             </h2>

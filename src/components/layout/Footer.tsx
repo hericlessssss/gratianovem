@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Heart } from 'lucide-react';
+import ChristianCross from '@/components/ui/ChristianCross';
 
 const Footer = () => {
   return (
@@ -9,13 +10,15 @@ const Footer = () => {
           {/* Brand */}
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <span className="text-gold text-xl">✝</span>
+              <div className="text-gold">
+                <ChristianCross className="h-5 w-5" />
+              </div>
               <span className="font-display text-lg font-semibold text-primary">
                 GRATIA NOVEM
               </span>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Guiando fiéis através de novenas, um dia de cada vez. 
+              Guiando fiéis através de novenas, um dia de cada vez.
               Que sua jornada de oração seja abençoada.
             </p>
           </div>
@@ -26,20 +29,20 @@ const Footer = () => {
               Navegação
             </h4>
             <nav className="flex flex-col gap-2">
-              <Link 
-                to="/novenas" 
+              <Link
+                to="/novenas"
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 Novenas
               </Link>
-              <Link 
-                to="/testimonials" 
+              <Link
+                to="/testimonials"
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 Testemunhos
               </Link>
-              <Link 
-                to="/settings" 
+              <Link
+                to="/settings"
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 Configurações
@@ -53,8 +56,8 @@ const Footer = () => {
               Privacidade
             </h4>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Respeitamos sua privacidade. Seus dados de oração são pessoais e 
-              armazenados com segurança. Você pode usar o app anonimamente ou 
+              Respeitamos sua privacidade. Seus dados de oração são pessoais e
+              armazenados com segurança. Você pode usar o app anonimamente ou
               vincular um email para sincronizar entre dispositivos.
             </p>
           </div>
