@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Check, Loader2, Shield } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Check, Loader2, Shield, Lock, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
@@ -19,6 +19,8 @@ import {
   useCompleteNovenaRun,
 } from '@/hooks/useNovena';
 import { toast } from '@/hooks/use-toast';
+import { format, addDays, isBefore, startOfDay, parseISO } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 const NovenaPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -31,7 +33,7 @@ const NovenaPage = () => {
   // Fetch novena data
   const { data: novena, isLoading: novenaLoading } = useNovena(slug || '');
   const { data: days, isLoading: daysLoading } = useNovenaDays(novena?.id);
-  
+
   // Get current day data
   const currentDayData = days?.find(d => d.day_number === currentDay);
   const { data: contentBlocks, isLoading: contentLoading } = useDayContent(currentDayData?.id);
@@ -65,21 +67,51 @@ const NovenaPage = () => {
     }
   }, [dayProgress, currentDay]);
 
-  // Find the current progress day
+  // Auto-advance logic (Only on initial load/mount)
   useEffect(() => {
-    if (allProgress && allProgress.length > 0) {
-      // Find the first incomplete day or the last completed + 1
+    if (allProgress && allProgress.length > 0 && isInitializing) {
       const completedDays = allProgress.filter(p => p.is_completed).map(p => p.day_number);
       const maxCompleted = Math.max(0, ...completedDays);
       const nextDay = Math.min(maxCompleted + 1, 9);
       setCurrentDay(nextDay);
     }
-  }, [allProgress]);
+  }, [allProgress, isInitializing]);
+
+  // Lock Logic
+  const lockStatus = useMemo(() => {
+    if (!run || !allProgress) return { isLocked: false, availableAt: null };
+
+    // Day 1 is always unlocked if run exists
+    if (currentDay === 1) return { isLocked: false, availableAt: null };
+
+    // Find previous day progress
+    const prevDayProgress = allProgress.find(p => p.day_number === currentDay - 1);
+
+    // If previous day not completed, lock current
+    if (!prevDayProgress?.is_completed) {
+      return { isLocked: true, reason: 'previous_incomplete', availableAt: null };
+    }
+
+    // Time Lock Calculation
+    if (prevDayProgress.completed_at) {
+      const completedDate = new Date(prevDayProgress.completed_at);
+      // Available at 00:00:00 of the NEXT day after completion
+      const nextDayStart = startOfDay(addDays(completedDate, 1));
+
+      if (isBefore(new Date(), nextDayStart)) {
+        return { isLocked: true, reason: 'time_lock', availableAt: nextDayStart };
+      }
+    }
+
+    return { isLocked: false, availableAt: null };
+
+  }, [currentDay, allProgress, run]);
+
 
   // Create run if needed
   const handleStartNovena = async () => {
     if (!novena || !user) return;
-    
+
     try {
       await createRun.mutateAsync(novena.id);
       refetchRun();
@@ -96,28 +128,24 @@ const NovenaPage = () => {
     }
   };
 
-  // Handle checklist toggle
+  // Handle checklist toggle (DECOUPLED from completion)
   const handleChecklistToggle = async (itemId: string) => {
     if (!run) return;
-    
+
     const newState = {
       ...localChecklist,
       [itemId]: !localChecklist[itemId],
     };
     setLocalChecklist(newState);
-    
-    // Check if all items are completed
-    const allChecked = checklistItems?.every(item => newState[item.id]) ?? false;
-    
+
     try {
       await updateProgress.mutateAsync({
         runId: run.id,
         dayNumber: currentDay,
         checklistState: newState,
-        isCompleted: allChecked,
+        isCompleted: false, // Explicitly false, we don't complete via checkboxes anymore
       });
     } catch (error) {
-      // Revert on error
       setLocalChecklist(localChecklist);
     }
   };
@@ -125,22 +153,22 @@ const NovenaPage = () => {
   // Mark day as complete
   const handleCompleteDay = async () => {
     if (!run || !checklistItems) return;
-    
+
+    // Ensure everything is checked visually (optional, but good UX)
     const allChecked: Record<string, boolean> = {};
     checklistItems.forEach(item => {
       allChecked[item.id] = true;
     });
-    
     setLocalChecklist(allChecked);
-    
+
     try {
       await updateProgress.mutateAsync({
         runId: run.id,
         dayNumber: currentDay,
         checklistState: allChecked,
-        isCompleted: true,
+        isCompleted: true, // Only HERE we mark as complete
       });
-      
+
       if (currentDay === 9) {
         await completeRun.mutateAsync(run.id);
         toast({
@@ -152,7 +180,8 @@ const NovenaPage = () => {
           title: `Dia ${currentDay} Completo!`,
           description: "Continue amanhã com o próximo dia.",
         });
-        setCurrentDay(prev => Math.min(prev + 1, 9));
+        // We do NOT auto-advance here anymore as per request.
+        // User stays on screen, sees "Dia Completo", and can navigate manually.
       }
     } catch (error) {
       toast({
@@ -207,18 +236,18 @@ const NovenaPage = () => {
       <div className="container py-6 md:py-10 max-w-3xl">
         {/* Header */}
         <div className="mb-8">
-          <Link 
-            to="/novenas" 
+          <Link
+            to="/novenas"
             className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
           >
             <ChevronLeft className="h-4 w-4" />
             Voltar
           </Link>
-          
+
           <h1 className="font-display text-2xl md:text-3xl font-semibold text-primary mb-2">
             {novena.title_pt || novena.title}
           </h1>
-          
+
           {/* Progress Bar */}
           <div className="flex items-center gap-4 mt-4">
             <Progress value={progressPercent} className="flex-1 h-2" />
@@ -253,8 +282,8 @@ const NovenaPage = () => {
             <p className="text-muted-foreground text-sm mb-6">
               Ao iniciar, seu progresso será salvo automaticamente.
             </p>
-            <Button 
-              variant="hero-gold" 
+            <Button
+              variant="hero-gold"
               onClick={handleStartNovena}
               disabled={createRun.isPending}
             >
@@ -278,14 +307,14 @@ const NovenaPage = () => {
               >
                 <ChevronLeft className="h-5 w-5" />
               </Button>
-              
+
               <div className="text-center">
                 <span className="text-sm text-muted-foreground">Dia</span>
                 <h2 className="font-display text-3xl font-semibold text-primary">
                   {currentDay}
                 </h2>
               </div>
-              
+
               <Button
                 variant="ghost"
                 size="icon"
@@ -303,13 +332,45 @@ const NovenaPage = () => {
               </h3>
             )}
 
-            {/* Content Blocks */}
+            {/* LOCKED STATE BANNER */}
+            {lockStatus.isLocked && (
+              <div className="prayer-card text-center py-8 px-6 mb-8 border-gold/20 bg-gold/5">
+                <div className="bg-background items-center justify-center inline-flex w-12 h-12 rounded-full mb-4 shadow-sm border border-gold/10">
+                  <Lock className="w-5 h-5 text-gold" />
+                </div>
+                <h3 className="font-display text-lg font-semibold text-primary mb-2">
+                  Dia Bloqueado
+                </h3>
+                {lockStatus.reason === 'previous_incomplete' ? (
+                  <div className="space-y-3">
+                    <p className="text-sm text-muted-foreground">
+                      Para marcar este dia como concluído, finalize primeiro o <strong>Dia {currentDay - 1}</strong>.
+                    </p>
+                    <Button variant="outline" size="sm" onClick={goToPreviousDay}>
+                      Ir para o Dia {currentDay - 1}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <p className="text-sm text-muted-foreground">
+                      A conclusão deste dia estará disponível a partir de:
+                    </p>
+                    <div className="flex items-center justify-center gap-2 text-gold font-medium bg-background py-1.5 px-3 rounded-lg inline-flex mx-auto border border-gold/10 shadow-sm text-sm">
+                      <Clock className="w-3 h-3" />
+                      {lockStatus.availableAt && format(lockStatus.availableAt, "d 'de' MMMM 'às' HH:mm", { locale: ptBR })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Content Blocks (Always Visible) */}
             {isDayLoading ? (
               <div className="flex justify-center py-12">
                 <Loader2 className="h-6 w-6 animate-spin text-gold" />
               </div>
             ) : (
-              <div className="space-y-6 mb-8">
+              <div className={`space-y-6 mb-8 ${lockStatus.isLocked ? 'opacity-75' : ''}`}>
                 {contentBlocks?.map((block) => (
                   <div key={block.id}>
                     {block.block_type === 'paragraph' && (
@@ -346,9 +407,9 @@ const NovenaPage = () => {
               </div>
             )}
 
-            {/* Checklist */}
+            {/* Checklist (Disabled if Locked) */}
             {checklistItems && checklistItems.length > 0 && (
-              <div className="prayer-card mb-8">
+              <div className={`prayer-card mb-8 ${lockStatus.isLocked ? 'opacity-60 pointer-events-none' : ''}`}>
                 <h4 className="font-display text-lg font-semibold text-primary mb-4">
                   Orações do Dia
                 </h4>
@@ -356,21 +417,19 @@ const NovenaPage = () => {
                   {checklistItems.map((item) => (
                     <label
                       key={item.id}
-                      className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
-                        localChecklist[item.id] 
-                          ? 'bg-gold/10' 
-                          : 'hover:bg-muted/50'
-                      }`}
+                      className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${localChecklist[item.id]
+                        ? 'bg-gold/10'
+                        : 'hover:bg-muted/50'
+                        }`}
                     >
                       <Checkbox
                         checked={localChecklist[item.id] ?? false}
                         onCheckedChange={() => handleChecklistToggle(item.id)}
-                        disabled={updateProgress.isPending}
+                        disabled={updateProgress.isPending || isDayComplete || lockStatus.isLocked}
                         className="data-[state=checked]:bg-gold data-[state=checked]:border-gold"
                       />
-                      <span className={`flex-1 ${
-                        localChecklist[item.id] ? 'text-muted-foreground line-through' : 'text-foreground'
-                      }`}>
+                      <span className={`flex-1 ${localChecklist[item.id] ? 'text-muted-foreground line-through' : 'text-foreground'
+                        }`}>
                         {item.label_pt || item.label}
                       </span>
                       {localChecklist[item.id] && (
@@ -382,33 +441,41 @@ const NovenaPage = () => {
               </div>
             )}
 
-            {/* Complete Day Button */}
-            <div className="text-center pb-8">
-              {isDayComplete ? (
-                <div className="inline-flex items-center gap-2 px-6 py-3 bg-gold/10 rounded-full text-gold">
-                  <Check className="h-5 w-5" />
-                  <span className="font-medium">Dia Completo</span>
-                </div>
-              ) : (
-                <Button
-                  variant="hero-gold"
-                  size="xl"
-                  onClick={handleCompleteDay}
-                  disabled={updateProgress.isPending}
-                >
-                  {updateProgress.isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  ) : null}
-                  Concluir Dia {currentDay}
-                </Button>
-              )}
-              
-              {currentDay < 9 && isDayComplete && (
-                <p className="text-sm text-muted-foreground mt-4">
-                  Continue amanhã com o Dia {currentDay + 1}
-                </p>
-              )}
-            </div>
+            {/* Complete Day Button (Hidden if Locked) */}
+            {!lockStatus.isLocked && (
+              <div className="text-center pb-8">
+                {isDayComplete ? (
+                  <div className="inline-flex items-center gap-2 px-6 py-3 bg-gold/10 rounded-full text-gold">
+                    <Check className="h-5 w-5" />
+                    <span className="font-medium">Dia Completo</span>
+                  </div>
+                ) : (
+                  <Button
+                    variant="hero-gold"
+                    size="xl"
+                    onClick={handleCompleteDay}
+                    disabled={updateProgress.isPending}
+                  >
+                    {updateProgress.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    ) : null}
+                    Concluir Dia {currentDay}
+                  </Button>
+                )}
+
+                {currentDay < 9 && isDayComplete && (
+                  <div className="mt-8 pt-8 border-t">
+                    <p className="text-muted-foreground mb-4">
+                      O dia {currentDay + 1} estará disponível amanhã.
+                    </p>
+                    <Button variant="outline" onClick={goToNextDay}>
+                      Ver próximo dia
+                      <ChevronRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
           </>
         )}
       </div>

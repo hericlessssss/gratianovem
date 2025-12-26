@@ -67,7 +67,7 @@ export const useNovenas = () => {
         .select('*')
         .eq('is_active', true)
         .order('created_at', { ascending: true });
-      
+
       if (error) throw error;
       return data as Novena[];
     },
@@ -85,7 +85,7 @@ export const useNovena = (slug: string) => {
         .eq('slug', slug)
         .eq('is_active', true)
         .maybeSingle();
-      
+
       if (error) throw error;
       return data as Novena | null;
     },
@@ -103,7 +103,7 @@ export const useNovenaDays = (novenaId: string | undefined) => {
         .select('*')
         .eq('novena_id', novenaId!)
         .order('day_number', { ascending: true });
-      
+
       if (error) throw error;
       return data as NovenaDay[];
     },
@@ -121,7 +121,7 @@ export const useDayContent = (dayId: string | undefined) => {
         .select('*')
         .eq('novena_day_id', dayId!)
         .order('sort_order', { ascending: true });
-      
+
       if (error) throw error;
       return data as ContentBlock[];
     },
@@ -139,7 +139,7 @@ export const useDayChecklist = (dayId: string | undefined) => {
         .select('*')
         .eq('novena_day_id', dayId!)
         .order('sort_order', { ascending: true });
-      
+
       if (error) throw error;
       return data as ChecklistItem[];
     },
@@ -150,12 +150,12 @@ export const useDayChecklist = (dayId: string | undefined) => {
 // Get or create a novena run for the current user
 export const useNovenaRun = (novenaId: string | undefined) => {
   const { user } = useAuth();
-  
+
   return useQuery({
     queryKey: ['novena-run', novenaId, user?.id],
     queryFn: async () => {
       if (!user) return null;
-      
+
       // Get the most recent in-progress run
       const { data, error } = await supabase
         .from('user_novena_runs')
@@ -165,7 +165,7 @@ export const useNovenaRun = (novenaId: string | undefined) => {
         .eq('status', 'in_progress')
         .order('started_at', { ascending: false })
         .maybeSingle();
-      
+
       if (error) throw error;
       return data as NovenaRun | null;
     },
@@ -173,15 +173,42 @@ export const useNovenaRun = (novenaId: string | undefined) => {
   });
 };
 
+// Fetch all runs for the current user
+export const useMyRuns = () => {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['my-runs', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+
+      const { data, error } = await supabase
+        .from('user_novena_runs')
+        .select(`
+          *,
+          user_day_progress (
+            is_completed
+          )
+        `)
+        .eq('user_id', user.id)
+        .eq('status', 'in_progress');
+
+      if (error) throw error;
+      return data as (NovenaRun & { user_day_progress: { is_completed: boolean }[] })[];
+    },
+    enabled: !!user,
+  });
+};
+
 // Create a new novena run
 export const useCreateNovenaRun = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  
+
   return useMutation({
     mutationFn: async (novenaId: string) => {
       if (!user) throw new Error('User not authenticated');
-      
+
       const { data, error } = await supabase
         .from('user_novena_runs')
         .insert({
@@ -191,7 +218,7 @@ export const useCreateNovenaRun = () => {
         })
         .select()
         .single();
-      
+
       if (error) throw error;
       return data as NovenaRun;
     },
@@ -211,7 +238,7 @@ export const useRunProgress = (runId: string | undefined) => {
         .select('*')
         .eq('run_id', runId!)
         .order('day_number', { ascending: true });
-      
+
       if (error) throw error;
       return data as DayProgress[];
     },
@@ -230,7 +257,7 @@ export const useDayProgress = (runId: string | undefined, dayNumber: number) => 
         .eq('run_id', runId!)
         .eq('day_number', dayNumber)
         .maybeSingle();
-      
+
       if (error) throw error;
       return data as DayProgress | null;
     },
@@ -241,7 +268,7 @@ export const useDayProgress = (runId: string | undefined, dayNumber: number) => 
 // Update day progress (checklist state)
 export const useUpdateDayProgress = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async ({
       runId,
@@ -261,7 +288,7 @@ export const useUpdateDayProgress = () => {
         .eq('run_id', runId)
         .eq('day_number', dayNumber)
         .maybeSingle();
-      
+
       if (existing) {
         // Update existing
         const { data, error } = await supabase
@@ -274,7 +301,7 @@ export const useUpdateDayProgress = () => {
           .eq('id', existing.id)
           .select()
           .single();
-        
+
         if (error) throw error;
         return data as DayProgress;
       } else {
@@ -290,7 +317,7 @@ export const useUpdateDayProgress = () => {
           })
           .select()
           .single();
-        
+
         if (error) throw error;
         return data as DayProgress;
       }
@@ -305,7 +332,7 @@ export const useUpdateDayProgress = () => {
 // Complete the novena run
 export const useCompleteNovenaRun = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (runId: string) => {
       const { data, error } = await supabase
@@ -317,7 +344,7 @@ export const useCompleteNovenaRun = () => {
         .eq('id', runId)
         .select()
         .single();
-      
+
       if (error) throw error;
       return data as NovenaRun;
     },

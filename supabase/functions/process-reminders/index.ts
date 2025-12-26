@@ -44,17 +44,11 @@ serve(async (req) => {
 
         const supabase = createClient(supabaseUrl, supabaseKey);
 
-        // 1. Get all active runs where user wants notifications
-        // We filter for active status and join with profiles and novenas
-        // We also left join user_day_progress to check if they completed TODAYS task.
-        // However, filtering on a Left Join for "Non Existence" is tricky in Supabase JS client.
-        // Easier to fetch active runs + their progress for today, then filter in JS.
-
-        // Calculate "Today" as start of day in UTC (or user timezone? Default UTC for now).
+        // Calculate "Today" as start of day in UTC
         const todayStart = new Date();
         todayStart.setHours(0, 0, 0, 0);
-        const todayISO = todayStart.toISOString();
 
+        // 1. Get all active runs
         const { data: runs, error } = await supabase
             .from("user_novena_runs")
             .select(`
@@ -64,7 +58,7 @@ serve(async (req) => {
         started_at,
         status,
         last_reminder_sent_at,
-        profiles!inner (
+        profiles (
           display_name,
           email,
           email_notifications
@@ -79,10 +73,11 @@ serve(async (req) => {
           is_completed
         )
       `)
-            .eq("status", "active")
-            .eq("profiles.email_notifications", true); // Only those who opted in
+            .eq("status", "active");
 
         if (error) throw error;
+
+        console.log(`Found ${runs?.length || 0} active runs. Starting processing...`);
 
         const transporter = nodemailer.createTransport({
             service: "gmail",
@@ -96,18 +91,23 @@ serve(async (req) => {
         });
 
         let emailsSent = 0;
+        const { force } = await req.json().catch(() => ({ force: false }));
 
         for (const run of runs as any) {
-            // Check if reminder already sent today
-            if (run.last_reminder_sent_at) {
+            // Skip if user has disabled notifications or has no profile
+            if (!run.profiles?.email_notifications || !run.profiles?.email) {
+                continue;
+            }
+
+            // Check if reminder already sent today (Unless forced)
+            if (run.last_reminder_sent_at && !force) {
                 const lastSent = new Date(run.last_reminder_sent_at);
                 if (lastSent > todayStart) {
-                    console.log(`Skipping run ${run.id}: Reminder already sent today.`);
                     continue;
                 }
             }
 
-            // Check if they completed a task TODAY
+            // Check if they completed a task TODAY (Unless forced)
             // We look at 'user_day_progress'. Check if any entry has completed_at >= todayStart
             const completedToday = run.user_day_progress?.some((p: any) => {
                 if (!p.is_completed || !p.completed_at) return false;
@@ -115,14 +115,14 @@ serve(async (req) => {
                 return completedAt >= todayStart;
             });
 
-            if (completedToday) {
-                console.log(`Skipping run ${run.id}: User already prayed today.`);
+            if (completedToday && !force) {
+                console.log(`Skipping run ${run.id} (${run.profiles.email}): User completed daily task.`);
                 continue;
+            } else if (completedToday && force) {
+                console.log(`Run ${run.id}: User prayed today, but FORCE is enabled. Acknowledging.`);
             }
 
             // Logic to determine which Day Number they should be on
-            // This is for the email content.
-            // Progress calculation in frontend: max(completed) + 1.
             const completedDays = run.user_day_progress?.filter((p: any) => p.is_completed).length || 0;
             const nextDay = Math.min(completedDays + 1, 9);
 
@@ -154,7 +154,7 @@ serve(async (req) => {
                 html = `
           <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #D4AF37;">Força, ${userName}!</h2>
-            <p><strong>Dia 5 de 9.</strong> A jornada é árdua, mas a recompensa é divina.</p>
+            <p><strong>Dia 5 de 9.</strong> A jornada é árdua, mas a recompensa é muito maior.</p>
             <p>Você já percorreu metade do caminho. Continue firme em seu propósito.</p>
             <div style="text-align: center; margin: 30px 0;">
               <a href="https://gratianovem.vercel.app/novena/${run.novenas?.slug}" style="background-color: #D4AF37; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
@@ -164,11 +164,6 @@ serve(async (req) => {
           </div>
         `;
             }
-
-            // If they are on Day 9 but haven't finished... standard reminder is fine.
-            // If they finished Day 9, 'completedToday' would likely be true? 
-            // Or 'period' logic would handle it.
-            // If run.status is 'completed', we filter them out in the initial query.
 
             console.log(`Sending email to ${userEmail} for day ${nextDay}`);
 

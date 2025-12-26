@@ -2,12 +2,13 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Layout from '@/components/layout/Layout';
-import { useNovenas } from '@/hooks/useNovena';
+import { useNovenas, useMyRuns } from '@/hooks/useNovena';
 
 import { useAuth } from '@/contexts/AuthContext';
 
 const NovenasPage = () => {
   const { data: novenas, isLoading, error } = useNovenas();
+  const { data: myRuns } = useMyRuns();
   const { isAdmin } = useAuth();
 
   return (
@@ -32,36 +33,56 @@ const NovenasPage = () => {
           </div>
         ) : novenas && novenas.length > 0 ? (
           <div className="max-w-2xl mx-auto space-y-6">
-            {novenas.map((novena) => (
-              <div 
-                key={novena.id} 
-                className="prayer-card hover:shadow-lg transition-shadow"
-              >
-                <div className="flex items-start gap-6">
-                  <div className="w-20 h-20 rounded-xl bg-gold/10 flex items-center justify-center text-gold text-3xl shrink-0">
-                    ✝
-                  </div>
-                  <div className="flex-1">
-                    <h2 className="font-display text-2xl font-semibold text-primary mb-2">
-                      {novena.title_pt || novena.title}
-                    </h2>
-                    <p className="text-muted-foreground text-sm mb-4">
-                      {novena.description_pt || novena.description}
-                    </p>
-                    <div className="flex items-center gap-4">
-                      <span className="text-xs text-muted-foreground bg-muted px-3 py-1 rounded-full">
-                        {novena.duration} dias
-                      </span>
-                      <Button asChild variant="gold" size="sm">
-                        <Link to={`/novena/${novena.slug}`}>
-                          Iniciar <ArrowRight className="ml-1 h-4 w-4" />
-                        </Link>
-                      </Button>
+            {novenas.map((novena) => {
+              const run = myRuns?.find(r => r.novena_id === novena.id);
+              const completedDays = run?.user_day_progress?.filter(p => p.is_completed).length || 0;
+              const currentDay = Math.min(completedDays + 1, 9);
+
+              let buttonText = "Iniciar";
+              let buttonIcon = <ArrowRight className="ml-1 h-4 w-4" />;
+              let buttonVariant: "gold" | "outline" | "default" | "destructive" | "secondary" | "ghost" | "link" | "hero-gold" = "gold";
+
+              if (run) {
+                if (currentDay === 9) {
+                  buttonText = "Finalizar Novena 🎉";
+                  buttonVariant = "hero-gold";
+                } else {
+                  buttonText = `Continuar Dia ${currentDay}`;
+                  buttonVariant = "outline";
+                }
+              }
+
+              return (
+                <div
+                  key={novena.id}
+                  className="prayer-card hover:shadow-lg transition-shadow"
+                >
+                  <div className="flex items-start gap-6">
+                    <div className="w-20 h-20 rounded-xl bg-gold/10 flex items-center justify-center text-gold text-3xl shrink-0">
+                      ✝
+                    </div>
+                    <div className="flex-1">
+                      <h2 className="font-display text-2xl font-semibold text-primary mb-2">
+                        {novena.title_pt || novena.title}
+                      </h2>
+                      <p className="text-muted-foreground text-sm mb-4">
+                        {novena.description_pt || novena.description}
+                      </p>
+                      <div className="flex items-center gap-4">
+                        <span className="text-xs text-muted-foreground bg-muted px-3 py-1 rounded-full">
+                          {novena.duration} dias
+                        </span>
+                        <Button asChild variant={buttonVariant} size="sm">
+                          <Link to={`/novena/${novena.slug}`}>
+                            {buttonText} {buttonIcon}
+                          </Link>
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <div className="text-center py-12">

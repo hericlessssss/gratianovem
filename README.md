@@ -128,8 +128,9 @@ npx supabase secrets set SMTP_PASS="sua-senha-de-app-aqui"
 ### 4. Automatização (Cron Job)
 Para enviar os lembretes automaticamente (ex: todo dia às 20h), você deve configurar um Cron Trigger no Supabase.
 
-1.  Habilite a extensão `pg_cron` no Dashboard do Supabase (Database -> Extensions).
-2.  Execute o seguinte SQL no SQL Editor do Supabase:
+1.  Habilite as extensões `pg_cron` e `pg_net` no Dashboard do Supabase (Database -> Extensions).
+2.  Ou execute o comando SQL: `create extension if not exists pg_net; create extension if not exists pg_cron;`
+3.  Execute o seguinte SQL no SQL Editor do Supabase:
 
 ```sql
 select
