@@ -10,6 +10,7 @@ import NovenaPage from "./pages/NovenaPage";
 import AuthPage from "./pages/AuthPage";
 import TestimonialsPage from "./pages/TestimonialsPage";
 import NewTestimonialPage from "./pages/NewTestimonialPage";
+import ConsecrationPage from "./pages/ConsecrationPage";
 import SettingsPage from "./pages/SettingsPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminNovenas from "./pages/admin/AdminNovenas";
@@ -34,6 +35,7 @@ const App = () => (
             <Route path="/novenas" element={<NovenasPage />} />
             <Route path="/novena/:slug" element={<NovenaPage />} />
             <Route path="/auth" element={<AuthPage />} />
+            <Route path="/consagracoes" element={<ConsecrationPage />} />
             <Route path="/testimonials" element={<TestimonialsPage />} />
             <Route path="/testimonials/new" element={<NewTestimonialPage />} />
             <Route path="/settings" element={<SettingsPage />} />

@@ -38,6 +38,12 @@ const Header = () => {
             Novenas
           </Link>
           <Link
+            to="/consagracoes"
+            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Consagrações
+          </Link>
+          <Link
             to="/testimonials"
             className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
@@ -105,6 +111,12 @@ const Header = () => {
                 className="text-lg font-display font-medium text-foreground hover:text-gold transition-colors"
               >
                 Novenas
+              </Link>
+              <Link
+                to="/consagracoes"
+                className="text-lg font-display font-medium text-foreground hover:text-gold transition-colors"
+              >
+                Consagrações
               </Link>
               <Link
                 to="/testimonials"
