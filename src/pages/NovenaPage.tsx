@@ -47,16 +47,13 @@ const NovenaPage = () => {
   const updateProgress = useUpdateDayProgress();
   const completeRun = useCompleteNovenaRun();
 
-  // Initialize anonymous auth if needed
+  // Initialize anonymous auth if needed - DISABLED for true Guest Mode
+  // We now support running without any auth via LocalStorage
   useEffect(() => {
-    const initAuth = async () => {
-      if (!authLoading && !user) {
-        await signInAnonymously();
-      }
+    if (!authLoading) {
       setIsInitializing(false);
-    };
-    initAuth();
-  }, [authLoading, user, signInAnonymously]);
+    }
+  }, [authLoading]);
 
   // Load saved checklist state
   useEffect(() => {
@@ -110,7 +107,7 @@ const NovenaPage = () => {
 
   // Create run if needed
   const handleStartNovena = async () => {
-    if (!novena || !user) return;
+    if (!novena) return;
 
     try {
       await createRun.mutateAsync(novena.id);
@@ -257,8 +254,8 @@ const NovenaPage = () => {
           </div>
         </div>
 
-        {/* Anonymous warning */}
-        {isAnonymous && (
+        {/* Anonymous warning - Show for Guest (no user) or Anonymous User */}
+        {(isAnonymous || !user) && (
           <div className="mb-6 p-4 bg-gold/10 border border-gold/20 rounded-xl flex items-start gap-3">
             <Shield className="h-5 w-5 text-gold shrink-0 mt-0.5" />
             <div className="flex-1">
@@ -273,7 +270,7 @@ const NovenaPage = () => {
         )}
 
         {/* Start Novena CTA */}
-        {!run && user && (
+        {!run && (
           <div className="prayer-card text-center mb-8">
             <span className="text-gold text-3xl block mb-4">✝</span>
             <h2 className="font-display text-xl font-semibold text-primary mb-2">

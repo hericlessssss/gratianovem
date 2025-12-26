@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { syncLocalDataToSupabase } from '@/services/syncService';
 
 interface Profile {
   id: string;
@@ -99,7 +100,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signInWithEmail = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (data.user) {
+      await syncLocalDataToSupabase(data.user.id);
+    }
     return { error: error as Error | null };
   };
 
@@ -145,6 +149,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             console.error('Erro ao atualizar perfil:', profileError);
           }
 
+          // Sync local data to newly linked account
+          await syncLocalDataToSupabase(data.user.id);
+
           await supabase.auth.refreshSession();
         }
         return { error: null };
@@ -170,6 +177,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (data.session) {
           setSession(data.session);
           setUser(data.session.user);
+          // Sync local data to newly created account
+          await syncLocalDataToSupabase(data.session.user.id);
         }
 
         return { error: null };

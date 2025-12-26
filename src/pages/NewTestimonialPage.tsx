@@ -39,11 +39,12 @@ const NewTestimonialPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!user) {
+
+    // Validation: Name is required for everyone now (as per user request)
+    if (!displayName.trim()) {
       toast({
-        title: "Erro",
-        description: "É necessário estar conectado para enviar um testemunho.",
+        title: "Nome obrigatório",
+        description: "Por favor, preencha o nome para exibição.",
         variant: "destructive",
       });
       return;
@@ -63,8 +64,8 @@ const NewTestimonialPage = () => {
     const { error } = await supabase
       .from('testimonials')
       .insert({
-        user_id: user.id,
-        display_name: displayName.trim() || 'Anônimo',
+        user_id: user?.id || null,
+        display_name: displayName.trim(),
         title: title.trim() || null,
         body: body.trim(),
         status: 'pending',
@@ -93,8 +94,8 @@ const NewTestimonialPage = () => {
   return (
     <Layout>
       <div className="container py-12 md:py-20 max-w-xl">
-        <Link 
-          to="/testimonials" 
+        <Link
+          to="/testimonials"
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -115,7 +116,7 @@ const NewTestimonialPage = () => {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="displayName">
-                Nome para exibição <span className="text-muted-foreground text-xs">(opcional)</span>
+                Nome para exibição <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="displayName"
@@ -124,9 +125,12 @@ const NewTestimonialPage = () => {
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
                 maxLength={50}
+                required
               />
               <p className="text-xs text-muted-foreground">
-                Seu email nunca será exibido publicamente
+                {user
+                  ? "Este nome será exibido publicamente. Seu email permanecerá privado."
+                  : "Este nome será exibido publicamente junto com seu testemunho."}
               </p>
             </div>
 
@@ -171,7 +175,7 @@ const NewTestimonialPage = () => {
               type="submit"
               variant="gold"
               className="w-full"
-              disabled={isSubmitting || !body.trim() || body.length > MAX_BODY_LENGTH}
+              disabled={isSubmitting || !body.trim() || !displayName.trim() || body.length > MAX_BODY_LENGTH}
             >
               {isSubmitting ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { localNovenaService, LocalNovenaRun, LocalDayProgress } from '@/services/localNovenaService';
 
 interface Novena {
   id: string;
@@ -31,7 +32,7 @@ interface ContentBlock {
   sort_order: number;
 }
 
-interface ChecklistItem {
+export interface ChecklistItem {
   id: string;
   novena_day_id: string;
   label: string;
@@ -48,6 +49,9 @@ interface NovenaRun {
   status: 'in_progress' | 'completed' | 'abandoned';
   completed_at: string | null;
 }
+
+// Ensure NovenaRun covers both for type safety where they overlap
+type AnyNovenaRun = NovenaRun | LocalNovenaRun;
 
 interface DayProgress {
   id: string;
@@ -150,12 +154,17 @@ export const useDayChecklist = (dayId: string | undefined) => {
 
 // Get or create a novena run for the current user
 export const useNovenaRun = (novenaId: string | undefined) => {
-  const { user } = useAuth();
+  const { user, isAnonymous } = useAuth();
+  // We want to fetch if we have a novenaId. If user is null, we fetch local.
+  const isEnabled = !!novenaId;
 
   return useQuery({
-    queryKey: ['novena-run', novenaId, user?.id],
+    queryKey: ['novena-run', novenaId, user?.id || 'guest'],
     queryFn: async () => {
-      if (!user) return null;
+      if (!user) {
+        // Guest mode: fetch from LocalStorage
+        return localNovenaService.getRunByNovenaId(novenaId!) as AnyNovenaRun | null;
+      }
 
       // Get the most recent in-progress run
       const { data, error } = await supabase
@@ -170,7 +179,7 @@ export const useNovenaRun = (novenaId: string | undefined) => {
       if (error) throw error;
       return data as NovenaRun | null;
     },
-    enabled: !!novenaId && !!user,
+    enabled: isEnabled,
   });
 };
 
@@ -179,9 +188,22 @@ export const useMyRuns = () => {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ['my-runs', user?.id],
+    queryKey: ['my-runs', user?.id || 'guest'],
     queryFn: async () => {
-      if (!user) return [];
+      if (!user) {
+        // Guest mode: return local runs (without user_day_progress details for now, or fetch them manually if needed)
+        // For the homepage/list, we mostly need the runs themselves. 
+        // If we need progress stats, we might need to enhance this.
+        const localRuns = localNovenaService.getRuns();
+        const runsWithProgress = localRuns.map(run => {
+          const progress = localNovenaService.getAllDayProgress(run.id);
+          return {
+            ...run,
+            user_day_progress: progress.map(p => ({ is_completed: p.is_completed }))
+          }
+        });
+        return runsWithProgress as (AnyNovenaRun & { user_day_progress: { is_completed: boolean }[] })[];
+      }
 
       const { data, error } = await supabase
         .from('user_novena_runs')
@@ -197,7 +219,6 @@ export const useMyRuns = () => {
       if (error) throw error;
       return data as (NovenaRun & { user_day_progress: { is_completed: boolean }[] })[];
     },
-    enabled: !!user,
   });
 };
 
@@ -208,7 +229,10 @@ export const useCreateNovenaRun = () => {
 
   return useMutation({
     mutationFn: async (novenaId: string) => {
-      if (!user) throw new Error('User not authenticated');
+      if (!user) {
+        // Guest mode
+        return localNovenaService.createRun(novenaId) as AnyNovenaRun;
+      }
 
       const { data, error } = await supabase
         .from('user_novena_runs')
@@ -224,16 +248,27 @@ export const useCreateNovenaRun = () => {
       return data as NovenaRun;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['novena-run', data.novena_id] });
+      const userId = user?.id || 'guest';
+      queryClient.invalidateQueries({ queryKey: ['novena-run', data.novena_id, userId] });
+      queryClient.invalidateQueries({ queryKey: ['my-runs', userId] });
     },
   });
 };
 
 // Get progress for all days in a run
 export const useRunProgress = (runId: string | undefined) => {
+  const { user } = useAuth();
+
   return useQuery({
     queryKey: ['run-progress', runId],
     queryFn: async () => {
+      if (!user && runId) {
+        // Guest mode - simplistic check, if runId exists and no user logged in, assume local
+        // Ideally we check if runId matches a local UUID format vs Supabase UUID, 
+        // but commonly they are both UUIDs. However, we only look in LS if !user.
+        return localNovenaService.getAllDayProgress(runId) as unknown as DayProgress[]; // Cast effectively compatible types
+      }
+
       const { data, error } = await supabase
         .from('user_day_progress')
         .select('*')
@@ -249,9 +284,15 @@ export const useRunProgress = (runId: string | undefined) => {
 
 // Get or create day progress
 export const useDayProgress = (runId: string | undefined, dayNumber: number) => {
+  const { user } = useAuth();
+
   return useQuery({
     queryKey: ['day-progress', runId, dayNumber],
     queryFn: async () => {
+      if (!user && runId) {
+        return localNovenaService.getDayProgress(runId, dayNumber) as unknown as DayProgress | null;
+      }
+
       const { data, error } = await supabase
         .from('user_day_progress')
         .select('*')
@@ -269,6 +310,7 @@ export const useDayProgress = (runId: string | undefined, dayNumber: number) => 
 // Update day progress (checklist state)
 export const useUpdateDayProgress = () => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async ({
@@ -282,6 +324,11 @@ export const useUpdateDayProgress = () => {
       checklistState: Record<string, number | boolean>;
       isCompleted: boolean;
     }) => {
+      if (!user) {
+        // Guest mode
+        return localNovenaService.saveDayProgress(runId, dayNumber, checklistState, isCompleted) as unknown as DayProgress;
+      }
+
       // First check if progress exists
       const { data: existing } = await supabase
         .from('user_day_progress')
@@ -326,6 +373,8 @@ export const useUpdateDayProgress = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['day-progress', data.run_id, data.day_number] });
       queryClient.invalidateQueries({ queryKey: ['run-progress', data.run_id] });
+      // Invalidate my-runs to update progress bars
+      queryClient.invalidateQueries({ queryKey: ['my-runs', user?.id || 'guest'] });
     },
   });
 };
@@ -333,9 +382,15 @@ export const useUpdateDayProgress = () => {
 // Complete the novena run
 export const useCompleteNovenaRun = () => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async (runId: string) => {
+      if (!user) {
+        // Guest mode
+        return localNovenaService.updateRunStatus(runId, 'completed') as unknown as NovenaRun;
+      }
+
       const { data, error } = await supabase
         .from('user_novena_runs')
         .update({
@@ -350,7 +405,9 @@ export const useCompleteNovenaRun = () => {
       return data as NovenaRun;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['novena-run', data.novena_id] });
+      const userId = user?.id || 'guest';
+      queryClient.invalidateQueries({ queryKey: ['novena-run', data.novena_id, userId] });
+      queryClient.invalidateQueries({ queryKey: ['my-runs', userId] });
     },
   });
 };
