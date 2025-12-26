@@ -99,7 +99,7 @@ const AdminNovenaEditor = () => {
         .in('novena_day_id', dayIds)
         .order('sort_order');
       if (error) throw error;
-      
+
       // Group by day
       const grouped: Record<string, ContentBlock[]> = {};
       data.forEach((block) => {
@@ -125,14 +125,14 @@ const AdminNovenaEditor = () => {
         .in('novena_day_id', dayIds)
         .order('sort_order');
       if (error) throw error;
-      
+
       // Group by day
       const grouped: Record<string, ChecklistItem[]> = {};
-      data.forEach((item) => {
+      (data as unknown as ChecklistItem[]).forEach((item) => {
         if (!grouped[item.novena_day_id]) {
           grouped[item.novena_day_id] = [];
         }
-        grouped[item.novena_day_id].push(item as ChecklistItem);
+        grouped[item.novena_day_id].push(item as unknown as ChecklistItem);
       });
       return grouped;
     },
@@ -262,6 +262,7 @@ const AdminNovenaEditor = () => {
             label: item.label || 'Item',
             label_pt: item.label_pt,
             sort_order: item.sort_order,
+            repetition_count: item.repetition_count || 1,
           });
         } else {
           // Update existing
@@ -271,6 +272,7 @@ const AdminNovenaEditor = () => {
               label: item.label || 'Item',
               label_pt: item.label_pt,
               sort_order: item.sort_order,
+              repetition_count: item.repetition_count || 1,
             })
             .eq('id', item.id);
         }
@@ -285,7 +287,7 @@ const AdminNovenaEditor = () => {
   // Create missing days
   const createMissingDays = async () => {
     if (!novena || !days) return;
-    
+
     const existingNumbers = days.map((d) => d.day_number);
     const missingNumbers = Array.from({ length: 9 }, (_, i) => i + 1).filter(
       (n) => !existingNumbers.includes(n)

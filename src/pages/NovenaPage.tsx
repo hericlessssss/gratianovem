@@ -27,7 +27,7 @@ const NovenaPage = () => {
   const navigate = useNavigate();
   const { user, isLoading: authLoading, signInAnonymously, isAnonymous } = useAuth();
   const [currentDay, setCurrentDay] = useState(1);
-  const [localChecklist, setLocalChecklist] = useState<Record<string, boolean>>({});
+  const [localChecklist, setLocalChecklist] = useState<Record<string, number | boolean>>({});
   const [isInitializing, setIsInitializing] = useState(true);
 
   // Fetch novena data
@@ -61,7 +61,7 @@ const NovenaPage = () => {
   // Load saved checklist state
   useEffect(() => {
     if (dayProgress?.checklist_state) {
-      setLocalChecklist(dayProgress.checklist_state as Record<string, boolean>);
+      setLocalChecklist(dayProgress.checklist_state);
     } else {
       setLocalChecklist({});
     }
@@ -129,12 +129,13 @@ const NovenaPage = () => {
   };
 
   // Handle checklist toggle (DECOUPLED from completion)
-  const handleChecklistToggle = async (itemId: string) => {
+  // Supports both simple boolean toggle and counter update
+  const handleChecklistUpdate = async (itemId: string, newValue: number | boolean) => {
     if (!run) return;
 
     const newState = {
       ...localChecklist,
-      [itemId]: !localChecklist[itemId],
+      [itemId]: newValue,
     };
     setLocalChecklist(newState);
 
@@ -143,7 +144,7 @@ const NovenaPage = () => {
         runId: run.id,
         dayNumber: currentDay,
         checklistState: newState,
-        isCompleted: false, // Explicitly false, we don't complete via checkboxes anymore
+        isCompleted: false, // Explicitly false
       });
     } catch (error) {
       setLocalChecklist(localChecklist);
@@ -154,18 +155,19 @@ const NovenaPage = () => {
   const handleCompleteDay = async () => {
     if (!run || !checklistItems) return;
 
-    // Ensure everything is checked visually (optional, but good UX)
-    const allChecked: Record<string, boolean> = {};
+    // Ensure everything is completed visually
+    const allCompleted: Record<string, number | boolean> = {};
     checklistItems.forEach(item => {
-      allChecked[item.id] = true;
+      // If it has repetition count, set to max, otherwise true
+      allCompleted[item.id] = item.repetition_count > 1 ? item.repetition_count : true;
     });
-    setLocalChecklist(allChecked);
+    setLocalChecklist(allCompleted);
 
     try {
       await updateProgress.mutateAsync({
         runId: run.id,
         dayNumber: currentDay,
-        checklistState: allChecked,
+        checklistState: allCompleted,
         isCompleted: true, // Only HERE we mark as complete
       });
 
@@ -180,8 +182,6 @@ const NovenaPage = () => {
           title: `Dia ${currentDay} Completo!`,
           description: "Continue amanhã com o próximo dia.",
         });
-        // We do NOT auto-advance here anymore as per request.
-        // User stays on screen, sees "Dia Completo", and can navigate manually.
       }
     } catch (error) {
       toast({
@@ -407,39 +407,82 @@ const NovenaPage = () => {
               </div>
             )}
 
-            {/* Checklist (Disabled if Locked) */}
+            {/* Checklist items with Bead Support */}
             {checklistItems && checklistItems.length > 0 && (
               <div className={`prayer-card mb-8 ${lockStatus.isLocked ? 'opacity-60 pointer-events-none' : ''}`}>
                 <h4 className="font-display text-lg font-semibold text-primary mb-4">
                   Orações do Dia
                 </h4>
-                <div className="space-y-3">
-                  {checklistItems.map((item) => (
-                    <label
-                      key={item.id}
-                      className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${localChecklist[item.id]
-                        ? 'bg-gold/10'
-                        : 'hover:bg-muted/50'
-                        }`}
-                    >
-                      <Checkbox
-                        checked={localChecklist[item.id] ?? false}
-                        onCheckedChange={() => handleChecklistToggle(item.id)}
-                        disabled={updateProgress.isPending || isDayComplete || lockStatus.isLocked}
-                        className="data-[state=checked]:bg-gold data-[state=checked]:border-gold"
-                      />
-                      <span className={`flex-1 ${localChecklist[item.id] ? 'text-muted-foreground line-through' : 'text-foreground'
-                        }`}>
-                        {item.label_pt || item.label}
-                      </span>
-                      {localChecklist[item.id] && (
-                        <Check className="h-4 w-4 text-gold animate-check" />
-                      )}
-                    </label>
-                  ))}
+                <div className="space-y-6">
+                  {checklistItems.map((item) => {
+                    const isBeadMode = item.repetition_count > 1;
+                    const currentValue = localChecklist[item.id];
+
+                    // Helper to get number value safely
+                    const getCount = () => {
+                      if (typeof currentValue === 'number') return currentValue;
+                      return currentValue ? item.repetition_count : 0;
+                    };
+
+                    const count = getCount();
+
+                    return (
+                      <div key={item.id} className="space-y-2">
+                        {isBeadMode ? (
+                          // BEAD MODE
+                          <div className="p-4 rounded-lg bg-gold/5 border border-gold/10">
+                            <p className="font-medium text-foreground mb-3">
+                              {item.label_pt || item.label}
+                            </p>
+                            <div className="flex flex-wrap gap-3 items-center">
+                              {Array.from({ length: item.repetition_count }).map((_, idx) => {
+                                const beadNum = idx + 1;
+                                const isActive = count >= beadNum;
+                                return (
+                                  <button
+                                    key={beadNum}
+                                    onClick={() => handleChecklistUpdate(item.id, isActive && count === beadNum ? beadNum - 1 : beadNum)}
+                                    disabled={updateProgress.isPending || isDayComplete || lockStatus.isLocked}
+                                    className={`
+                                      w-8 h-8 rounded-full border-2 transition-all duration-300 flex items-center justify-center
+                                      ${isActive
+                                        ? 'bg-gold border-gold text-white shadow-md scale-110'
+                                        : 'bg-transparent border-gold/30 hover:border-gold/60 text-muted-foreground'}
+                                    `}
+                                  >
+                                    {isActive && <Check className="w-4 h-4" />}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ) : (
+                          // CHECKBOX MODE
+                          <label
+                            className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${currentValue
+                              ? 'bg-gold/10'
+                              : 'hover:bg-muted/50'
+                              }`}
+                          >
+                            <Checkbox
+                              checked={!!currentValue}
+                              onCheckedChange={(checked) => handleChecklistUpdate(item.id, !!checked)}
+                              disabled={updateProgress.isPending || isDayComplete || lockStatus.isLocked}
+                              className="data-[state=checked]:bg-gold data-[state=checked]:border-gold"
+                            />
+                            <span className={`flex-1 ${currentValue ? 'text-muted-foreground line-through' : 'text-foreground'
+                              }`}>
+                              {item.label_pt || item.label}
+                            </span>
+                          </label>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
+
 
             {/* Complete Day Button (Hidden if Locked) */}
             {!lockStatus.isLocked && (

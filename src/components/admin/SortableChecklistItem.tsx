@@ -6,9 +6,11 @@ import { Input } from '@/components/ui/input';
 
 export interface ChecklistItem {
   id: string;
+  novena_day_id: string;
   label: string;
   label_pt: string | null;
   sort_order: number;
+  repetition_count: number;
 }
 
 interface SortableChecklistItemProps {
@@ -50,8 +52,19 @@ export const SortableChecklistItem = ({ item, onUpdate, onDelete }: SortableChec
         </button>
 
         {/* Checkbox Icon */}
-        <div className="w-5 h-5 rounded border border-gold/50 flex items-center justify-center text-gold/50">
+        <div className="w-5 h-5 rounded border border-gold/50 flex items-center justify-center text-gold/50 shrink-0">
           <Check className="h-3 w-3" />
+        </div>
+
+        {/* Repetition Count */}
+        <div className="w-16 shrink-0" title="Quantidade de repetições (ex: 7 bolinhas)">
+          <Input
+            type="number"
+            min={1}
+            value={item.repetition_count || 1}
+            onChange={(e) => onUpdate(item.id, { repetition_count: parseInt(e.target.value) || 1 })}
+            className="text-center px-1"
+          />
         </div>
 
         {/* Label Fields */}

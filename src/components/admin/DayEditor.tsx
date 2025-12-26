@@ -33,6 +33,7 @@ interface DayEditorProps {
 }
 
 export const DayEditor = ({
+  dayId,
   dayNumber,
   dayTitle,
   dayTitlePt,
@@ -123,12 +124,14 @@ export const DayEditor = ({
   const handleAddItem = useCallback(() => {
     const newItem: ChecklistItem = {
       id: `new-${Date.now()}`,
+      novena_day_id: dayId,
       label: '',
       label_pt: '',
       sort_order: checklistItems.length,
+      repetition_count: 1,
     };
     onUpdateChecklistItems([...checklistItems, newItem]);
-  }, [checklistItems, onUpdateChecklistItems]);
+  }, [checklistItems, onUpdateChecklistItems, dayId]);
 
   const handleTitleBlur = () => {
     if (localTitle !== dayTitle || localTitlePt !== (dayTitlePt || '')) {

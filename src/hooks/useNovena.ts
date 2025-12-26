@@ -37,6 +37,7 @@ interface ChecklistItem {
   label: string;
   label_pt: string | null;
   sort_order: number;
+  repetition_count: number;
 }
 
 interface NovenaRun {
@@ -52,7 +53,7 @@ interface DayProgress {
   id: string;
   run_id: string;
   day_number: number;
-  checklist_state: Record<string, boolean>;
+  checklist_state: Record<string, number | boolean>; // number for repetition count, boolean for legacy/simple checkboxes
   is_completed: boolean;
   completed_at: string | null;
 }
@@ -141,7 +142,7 @@ export const useDayChecklist = (dayId: string | undefined) => {
         .order('sort_order', { ascending: true });
 
       if (error) throw error;
-      return data as ChecklistItem[];
+      return data as unknown as ChecklistItem[];
     },
     enabled: !!dayId,
   });
@@ -278,7 +279,7 @@ export const useUpdateDayProgress = () => {
     }: {
       runId: string;
       dayNumber: number;
-      checklistState: Record<string, boolean>;
+      checklistState: Record<string, number | boolean>;
       isCompleted: boolean;
     }) => {
       // First check if progress exists
