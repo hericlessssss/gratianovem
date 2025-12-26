@@ -71,31 +71,28 @@ const TestimonialsPage = () => {
   });
 
   const toggleLike = useMutation({
-    mutationFn: async (testimonialId: string) => {
-      const isLiked = likedIds.includes(testimonialId);
+    mutationFn: async ({ id, isLiked }: { id: string; isLiked: boolean }) => {
       const { error } = await supabase.rpc('increment_testimonial_likes', {
-        row_id: testimonialId,
+        row_id: id,
         increment: !isLiked
       });
 
       if (error) throw error;
-      return { testimonialId, isLiked };
+      return { id, isLiked };
     },
-    onMutate: async (testimonialId) => {
-      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+    onMutate: async ({ id, isLiked }) => {
+      // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: ['testimonials'] });
 
       // Snapshot the previous value
       const previousTestimonials = queryClient.getQueryData(['testimonials', sortBy]);
 
-      // Optimistically update to the new value
-      const isLiked = likedIds.includes(testimonialId);
-
+      // Optimistically update
       // Update UI count
       queryClient.setQueryData(['testimonials', sortBy], (old: Testimonial[] | undefined) => {
         if (!old) return [];
         return old.map(t => {
-          if (t.id === testimonialId) {
+          if (t.id === id) {
             return {
               ...t,
               likes_count: isLiked ? Math.max(0, (t.likes_count || 0) - 1) : (t.likes_count || 0) + 1
@@ -105,19 +102,19 @@ const TestimonialsPage = () => {
         });
       });
 
-      // Update Local State for "Amém!" text/color immediately
+      // Update Local State immediately
       let newLikedIds;
       if (isLiked) {
-        newLikedIds = likedIds.filter(id => id !== testimonialId);
+        newLikedIds = likedIds.filter(likedId => likedId !== id);
       } else {
-        newLikedIds = [...likedIds, testimonialId];
+        newLikedIds = [...likedIds, id];
       }
       setLikedIds(newLikedIds);
       localStorage.setItem(storageKey, JSON.stringify(newLikedIds));
 
       return { previousTestimonials, previousLikedIds: likedIds };
     },
-    onError: (err, testimonialId, context) => {
+    onError: (err, { id }, context) => {
       // Rollback
       if (context?.previousTestimonials) {
         queryClient.setQueryData(['testimonials', sortBy], context.previousTestimonials);
@@ -129,13 +126,12 @@ const TestimonialsPage = () => {
       console.error('Like mutation error:', err);
     },
     onSettled: () => {
-      // Always refetch after error or success to ensure sync
       queryClient.invalidateQueries({ queryKey: ['testimonials'] });
     },
   });
 
-  const handleLike = (id: string) => {
-    toggleLike.mutate(id);
+  const handleLike = (id: string, isLiked: boolean) => {
+    toggleLike.mutate({ id, isLiked });
   };
 
   return (
@@ -201,7 +197,7 @@ const TestimonialsPage = () => {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleLike(t.id)}
+                          onClick={() => handleLike(t.id, isLiked)}
                           className={`gap-2 hover:bg-gold/10 hover:text-gold transition-colors ${isLiked ? 'text-gold bg-gold/5' : 'text-muted-foreground'}`}
                           disabled={toggleLike.isPending}
                         >
