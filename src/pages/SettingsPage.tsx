@@ -42,7 +42,7 @@ const SettingsPage = () => {
       });
     } else {
       const message = isAnonymous
-        ? "Sua conta foi vinculada com sucesso! Por favor, faça login para confirmar."
+        ? "Sua conta foi vinculada com sucesso! Você reberá um e-mail de confirmação. Após confirmar, faça login para continuar."
         : "Conta criada com sucesso! Verifique seu email para confirmar.";
 
       setSuccessMessage(message);
