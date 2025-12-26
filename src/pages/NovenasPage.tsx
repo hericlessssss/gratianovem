@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Loader2, Search, MessageCircle, Mail } from 'lucide-react';
+import { ArrowRight, Loader2, Search, MessageCircle, Mail, BellOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import Layout from '@/components/layout/Layout';
@@ -47,6 +47,21 @@ const NovenasPage = () => {
           <p className="text-muted-foreground max-w-xl mx-auto mb-8">
             Escolha uma novena para iniciar sua jornada de oração
           </p>
+
+          {/* Focus Suggestion Banner */}
+          <div className="max-w-xl mx-auto mb-8 bg-amber-500/10 border border-amber-500/20 rounded-lg p-4 flex items-center gap-3 text-left animate-fade-in-up">
+            <div className="bg-amber-500/15 p-2 rounded-full shrink-0">
+              <BellOff className="h-5 w-5 text-amber-600 dark:text-amber-500" />
+            </div>
+            <div>
+              <p className="font-medium text-amber-900 dark:text-amber-100 text-sm md:text-base">
+                Momento de Oração
+              </p>
+              <p className="text-sm text-muted-foreground leading-snug">
+                Recomendamos silenciar as notificações ou distanciar o celular para focar 100% em sua novena.
+              </p>
+            </div>
+          </div>
 
           {/* Search Box */}
           <div className="max-w-md mx-auto relative">

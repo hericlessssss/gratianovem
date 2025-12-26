@@ -371,115 +371,135 @@ const NovenaPage = () => {
               </div>
             ) : (
               <div className={`space-y-6 mb-8 ${lockStatus.isLocked ? 'opacity-75' : ''}`}>
-                {contentBlocks?.map((block) => (
-                  <div key={block.id}>
-                    {block.block_type === 'paragraph' && (
-                      <p className="text-foreground leading-relaxed">
-                        {block.content_pt || block.content}
-                      </p>
-                    )}
-                    {block.block_type === 'prayer' && (
-                      <div className="prayer-card">
-                        <p className="text-foreground leading-relaxed whitespace-pre-wrap">
-                          {block.content_pt || block.content}
-                        </p>
-                      </div>
-                    )}
-                    {block.block_type === 'quote' && (
-                      <blockquote className="quote-block">
-                        <p className="text-foreground italic">
-                          {block.content_pt || block.content}
-                        </p>
-                      </blockquote>
-                    )}
-                    {block.block_type === 'intention' && (
-                      <div className="intention-block">
-                        <p className="text-sm text-muted-foreground uppercase tracking-wider mb-2">
-                          Intenção
-                        </p>
-                        <p className="text-foreground leading-relaxed">
-                          {block.content_pt || block.content}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
+                {(() => {
+                  const hasChecklistBlock = contentBlocks?.some(b => (b.block_type as string) === 'checklist');
 
-            {/* Checklist items with Bead Support */}
-            {checklistItems && checklistItems.length > 0 && (
-              <div className={`prayer-card mb-8 ${lockStatus.isLocked ? 'opacity-60 pointer-events-none' : ''}`}>
-                <h4 className="font-display text-lg font-semibold text-primary mb-4">
-                  Orações do Dia
-                </h4>
-                <div className="space-y-6">
-                  {checklistItems.map((item) => {
-                    const isBeadMode = item.repetition_count > 1;
-                    const currentValue = localChecklist[item.id];
-
-                    // Helper to get number value safely
-                    const getCount = () => {
-                      if (typeof currentValue === 'number') return currentValue;
-                      return currentValue ? item.repetition_count : 0;
-                    };
-
-                    const count = getCount();
-
+                  const renderChecklist = () => {
+                    if (!checklistItems || checklistItems.length === 0) return null;
                     return (
-                      <div key={item.id} className="space-y-2">
-                        {isBeadMode ? (
-                          // BEAD MODE
-                          <div className="p-4 rounded-lg bg-gold/5 border border-gold/10">
-                            <p className="font-medium text-foreground mb-3">
-                              {item.label_pt || item.label}
-                            </p>
-                            <div className="flex flex-wrap gap-3 items-center">
-                              {Array.from({ length: item.repetition_count }).map((_, idx) => {
-                                const beadNum = idx + 1;
-                                const isActive = count >= beadNum;
-                                return (
-                                  <button
-                                    key={beadNum}
-                                    onClick={() => handleChecklistUpdate(item.id, isActive && count === beadNum ? beadNum - 1 : beadNum)}
-                                    disabled={updateProgress.isPending || isDayComplete || lockStatus.isLocked}
-                                    className={`
-                                      w-8 h-8 rounded-full border-2 transition-all duration-300 flex items-center justify-center
-                                      ${isActive
-                                        ? 'bg-gold border-gold text-white shadow-md scale-110'
-                                        : 'bg-transparent border-gold/30 hover:border-gold/60 text-muted-foreground'}
-                                    `}
+                      <div className={`prayer-card mb-8 ${lockStatus.isLocked ? 'opacity-60 pointer-events-none' : ''}`}>
+                        <h4 className="font-display text-lg font-semibold text-primary mb-4">
+                          Orações do Dia
+                        </h4>
+                        <div className="space-y-6">
+                          {checklistItems.map((item) => {
+                            const isBeadMode = item.repetition_count > 1;
+                            const currentValue = localChecklist[item.id];
+
+                            // Helper to get number value safely
+                            const getCount = () => {
+                              if (typeof currentValue === 'number') return currentValue;
+                              return currentValue ? item.repetition_count : 0;
+                            };
+
+                            const count = getCount();
+
+                            return (
+                              <div key={item.id} className="space-y-2">
+                                {isBeadMode ? (
+                                  // BEAD MODE
+                                  <div className="p-4 rounded-lg bg-gold/5 border border-gold/10">
+                                    <p className="font-medium text-foreground mb-3">
+                                      {item.label_pt || item.label}
+                                    </p>
+                                    <div className="flex flex-wrap gap-3 items-center">
+                                      {Array.from({ length: item.repetition_count }).map((_, idx) => {
+                                        const beadNum = idx + 1;
+                                        const isActive = count >= beadNum;
+                                        return (
+                                          <button
+                                            key={beadNum}
+                                            onClick={() => handleChecklistUpdate(item.id, isActive && count === beadNum ? beadNum - 1 : beadNum)}
+                                            disabled={updateProgress.isPending || isDayComplete || lockStatus.isLocked}
+                                            className={`
+                                            w-8 h-8 rounded-full border-2 transition-all duration-300 flex items-center justify-center
+                                            ${isActive
+                                                ? 'bg-gold border-gold text-white shadow-md scale-110'
+                                                : 'bg-transparent border-gold/30 hover:border-gold/60 text-muted-foreground'}
+                                          `}
+                                          >
+                                            {isActive && <Check className="w-4 h-4" />}
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  // CHECKBOX MODE
+                                  <label
+                                    className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${currentValue
+                                      ? 'bg-gold/10'
+                                      : 'hover:bg-muted/50'
+                                      }`}
                                   >
-                                    {isActive && <Check className="w-4 h-4" />}
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        ) : (
-                          // CHECKBOX MODE
-                          <label
-                            className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${currentValue
-                              ? 'bg-gold/10'
-                              : 'hover:bg-muted/50'
-                              }`}
-                          >
-                            <Checkbox
-                              checked={!!currentValue}
-                              onCheckedChange={(checked) => handleChecklistUpdate(item.id, !!checked)}
-                              disabled={updateProgress.isPending || isDayComplete || lockStatus.isLocked}
-                              className="data-[state=checked]:bg-gold data-[state=checked]:border-gold"
-                            />
-                            <span className={`flex-1 ${currentValue ? 'text-muted-foreground line-through' : 'text-foreground'
-                              }`}>
-                              {item.label_pt || item.label}
-                            </span>
-                          </label>
-                        )}
+                                    <Checkbox
+                                      checked={!!currentValue}
+                                      onCheckedChange={(checked) => handleChecklistUpdate(item.id, !!checked)}
+                                      disabled={updateProgress.isPending || isDayComplete || lockStatus.isLocked}
+                                      className="data-[state=checked]:bg-gold data-[state=checked]:border-gold"
+                                    />
+                                    <span className={`flex-1 ${currentValue ? 'text-muted-foreground line-through' : 'text-foreground'
+                                      }`}>
+                                      {item.label_pt || item.label}
+                                    </span>
+                                  </label>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
                     );
-                  })}
-                </div>
+                  };
+
+                  return (
+                    <>
+                      {contentBlocks?.map((block) => {
+                        if ((block.block_type as string) === 'checklist') {
+                          return renderChecklist();
+                        }
+
+                        const content = block.content_pt || block.content;
+                        const formattedContent = content?.replace(/\\n/g, '\n');
+
+                        return (
+                          <div key={block.id}>
+                            {block.block_type === 'paragraph' && (
+                              <p className="text-foreground leading-relaxed whitespace-pre-line">
+                                {formattedContent}
+                              </p>
+                            )}
+                            {block.block_type === 'prayer' && (
+                              <div className="prayer-card">
+                                <p className="text-foreground leading-relaxed whitespace-pre-line">
+                                  {formattedContent}
+                                </p>
+                              </div>
+                            )}
+                            {block.block_type === 'quote' && (
+                              <blockquote className="quote-block">
+                                <p className="text-foreground italic whitespace-pre-line">
+                                  {formattedContent}
+                                </p>
+                              </blockquote>
+                            )}
+                            {block.block_type === 'intention' && (
+                              <div className="intention-block">
+                                <p className="text-sm text-muted-foreground uppercase tracking-wider mb-2">
+                                  Intenção
+                                </p>
+                                <p className="text-foreground leading-relaxed whitespace-pre-line">
+                                  {formattedContent}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                      {!hasChecklistBlock && renderChecklist()}
+                    </>
+                  );
+                })()}
               </div>
             )}
 

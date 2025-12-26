@@ -1,13 +1,13 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, Trash2, Type, BookOpen, Quote, Lightbulb } from 'lucide-react';
+import { GripVertical, Trash2, Type, BookOpen, Quote, Lightbulb, ListChecks } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export interface ContentBlock {
   id: string;
-  block_type: 'paragraph' | 'prayer' | 'quote' | 'intention';
+  block_type: 'paragraph' | 'prayer' | 'quote' | 'intention' | 'checklist';
   content: string;
   content_pt: string | null;
   sort_order: number;
@@ -24,6 +24,7 @@ const blockTypeIcons = {
   prayer: BookOpen,
   quote: Quote,
   intention: Lightbulb,
+  checklist: ListChecks,
 };
 
 const blockTypeLabels = {
@@ -31,6 +32,7 @@ const blockTypeLabels = {
   prayer: 'Oração',
   quote: 'Citação',
   intention: 'Intenção',
+  checklist: 'Checklist (Posição)',
 };
 
 export const SortableContentBlock = ({ block, onUpdate, onDelete }: SortableContentBlockProps) => {
@@ -49,7 +51,7 @@ export const SortableContentBlock = ({ block, onUpdate, onDelete }: SortableCont
     opacity: isDragging ? 0.5 : 1,
   };
 
-  const Icon = blockTypeIcons[block.block_type];
+  const Icon = blockTypeIcons[block.block_type] || Type;
 
   return (
     <div
@@ -83,6 +85,7 @@ export const SortableContentBlock = ({ block, onUpdate, onDelete }: SortableCont
                 <SelectItem value="prayer">Oração</SelectItem>
                 <SelectItem value="quote">Citação</SelectItem>
                 <SelectItem value="intention">Intenção</SelectItem>
+                <SelectItem value="checklist">Checklist (Posição)</SelectItem>
               </SelectContent>
             </Select>
             <span className="text-xs text-muted-foreground">
@@ -91,32 +94,45 @@ export const SortableContentBlock = ({ block, onUpdate, onDelete }: SortableCont
           </div>
 
           {/* Content Fields */}
-          <div className="grid gap-3">
-            <div>
-              <label className="text-xs text-muted-foreground mb-1 block">
-                Conteúdo (Português)
-              </label>
-              <Textarea
-                value={block.content_pt || ''}
-                onChange={(e) => onUpdate(block.id, { content_pt: e.target.value })}
-                placeholder="Conteúdo em português..."
-                rows={3}
-                className="resize-none"
-              />
+          {block.block_type === 'checklist' ? (
+            <div className="p-3 bg-muted/50 rounded-md border border-dashed border-gold/30">
+              <p className="text-sm font-medium text-gold flex items-center gap-2">
+                <ListChecks className="h-4 w-4" />
+                Posição do Checklist de Orações
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Este bloco define onde a lista de orações será exibida na página.
+                Gerencie os itens do checklist na seção abaixo.
+              </p>
             </div>
-            <div>
-              <label className="text-xs text-muted-foreground mb-1 block">
-                Content (English - fallback)
-              </label>
-              <Textarea
-                value={block.content}
-                onChange={(e) => onUpdate(block.id, { content: e.target.value })}
-                placeholder="Content in English..."
-                rows={2}
-                className="resize-none text-sm"
-              />
+          ) : (
+            <div className="grid gap-3">
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">
+                  Conteúdo (Português)
+                </label>
+                <Textarea
+                  value={block.content_pt || ''}
+                  onChange={(e) => onUpdate(block.id, { content_pt: e.target.value })}
+                  placeholder="Conteúdo em português..."
+                  rows={3}
+                  className="resize-none"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">
+                  Content (English - fallback)
+                </label>
+                <Textarea
+                  value={block.content}
+                  onChange={(e) => onUpdate(block.id, { content: e.target.value })}
+                  placeholder="Content in English..."
+                  rows={2}
+                  className="resize-none text-sm"
+                />
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Delete Button */}
