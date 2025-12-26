@@ -140,7 +140,7 @@ serve(async (req) => {
           <p>A noite está chegando ao fim, mas ainda há tempo para um momento de paz.</p>
           <p>Falta pouco para completar o <strong>dia ${nextDay}</strong> da sua novena <strong>${novenaTitle}</strong>.</p>
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://gratianovem.vercel.app/novena/${run.novenas?.slug}" style="background-color: #D4AF37; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+            <a href="https://gratianovem.com.br/novena/${run.novenas?.slug}" style="background-color: #D4AF37; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
               Rezar Agora
             </a>
           </div>
@@ -157,7 +157,7 @@ serve(async (req) => {
             <p><strong>Dia 5 de 9.</strong> A jornada é árdua, mas a recompensa é muito maior.</p>
             <p>Você já percorreu metade do caminho. Continue firme em seu propósito.</p>
             <div style="text-align: center; margin: 30px 0;">
-              <a href="https://gratianovem.vercel.app/novena/${run.novenas?.slug}" style="background-color: #D4AF37; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+              <a href="https://gratianovem.com.br/novena/${run.novenas?.slug}" style="background-color: #D4AF37; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
                 Continuar Jornada
               </a>
             </div>
