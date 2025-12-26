@@ -212,6 +212,7 @@ export type Database = {
           status: string
           title: string | null
           user_id: string | null
+          likes_count: number | null
         }
         Insert: {
           body: string
@@ -353,6 +354,13 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_testimonial_likes: {
+        Args: {
+          row_id: string
+          increment: boolean
+        }
+        Returns: void
       }
     }
     Enums: {
