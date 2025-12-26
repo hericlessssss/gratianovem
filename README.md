@@ -95,3 +95,69 @@ src/
   - CRUD de Novenas (Criação e Edição).
   - Moderação de Testemunhos.
 - **Responsividade**: Layout adaptável para dispositivos móveis e desktop.
+
+## 📧 Configuração de Email (SMTP)
+
+A aplicação está preparada para enviar lembretes por email utilizando um servidor SMTP (como Gmail). Para ativar essa funcionalidade, você precisará configurar uma **Supabase Edge Function** e definir as credenciais.
+
+### 1. Configurar Gmail (ou outro provedor)
+Se for utilizar o Gmail, você precisa gerar uma "Senha de App" (App Password), pois a senha normal não funciona para SMTP.
+1. Acesse sua conta Google -> Segurança.
+2. Ative a "Verificação em duas etapas" (se não estiver ativa).
+3. Busque por "Senhas de App".
+4. Crie uma nova senha (ex: "Gratianovem App") e copie a senha gerada (ex: `xxxx xxxx xxxx xxxx`).
+
+### 2. Deploy da Função
+O código da função de envio está em `supabase/functions/send-email`. Você precisa fazer o deploy dela para o Supabase.
+
+No terminal, execute:
+```bash
+npx supabase functions deploy send-email --no-verify-jwt
+```
+> **Nota:** O deploy requer que você esteja logado no Supabase CLI (`npx supabase login`) e tenha o projeto linkado (`npx supabase link --project-ref <seu-project-id>`).
+
+### 3. Definir Variáveis de Ambiente (Segredos)
+Configure as credenciais do email no Supabase para que a função possa acessá-las. **NUNCA** coloque essas senhas no código ou no `.env` do frontend.
+
+No terminal:
+```bash
+npx supabase secrets set SMTP_USER="seu-email@gmail.com"
+npx supabase secrets set SMTP_PASS="sua-senha-de-app-aqui"
+```
+
+### 4. Automatização (Cron Job)
+Para enviar os lembretes automaticamente (ex: todo dia às 20h), você deve configurar um Cron Trigger no Supabase.
+
+1.  Habilite a extensão `pg_cron` no Dashboard do Supabase (Database -> Extensions).
+2.  Execute o seguinte SQL no SQL Editor do Supabase:
+
+```sql
+select
+  cron.schedule(
+    'reminders-daily-20h', -- nome do job
+    '0 20 * * *',          -- cron expression (20:00 UTC)
+    $$
+    select
+      net.http_post(
+        url:='https://<seu-project-ref>.supabase.co/functions/v1/process-reminders',
+        headers:='{"Content-Type": "application/json", "Authorization": "Bearer <sua-service-role-key>"}'::jsonb
+      ) as request_id;
+    $$
+  );
+```
+> **Atenção:** Substitua `<seu-project-ref>` e `<sua-service-role-key>` pelos valores corretos do seu projeto. Você pode encontrar a Service Role Key em Project Settings -> API.
+
+### 5. Deploy da Função de Lembretes
+Esta função (`process-reminders`) contém a lógica inteligente que verifica quem não rezou hoje.
+
+Deploy:
+```bash
+npx supabase functions deploy process-reminders --no-verify-jwt
+```
+E certifique-se de que os segredos `SMTP_USER`, `SMTP_PASS`, `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` estejam definidos no Supabase.
+
+```bash
+npx supabase secrets set SUPABASE_URL="sua-url"
+npx supabase secrets set SUPABASE_SERVICE_ROLE_KEY="sua-key"
+```
+*(Nota: As funções do Supabase geralmente já têm acesso a essas variáveis, mas é bom garantir ou usar `Deno.env.get('SUPABASE_URL')` se disponível por padrão)*.

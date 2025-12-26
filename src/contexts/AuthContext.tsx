@@ -8,6 +8,7 @@ interface Profile {
   display_name: string | null;
   email: string | null;
   is_anonymous: boolean;
+  email_notifications?: boolean;
 }
 
 interface AuthContextType {
@@ -39,7 +40,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       .select('*')
       .eq('user_id', userId)
       .maybeSingle();
-    
+
     if (data) {
       setProfile(data);
     }
@@ -52,7 +53,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       .eq('user_id', userId)
       .eq('role', 'admin')
       .maybeSingle();
-    
+
     setIsAdmin(!!data);
   };
 
@@ -62,7 +63,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        
+
         if (session?.user) {
           // Defer profile fetch to avoid deadlock
           setTimeout(() => {
@@ -80,12 +81,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      
+
       if (session?.user) {
         fetchProfile(session.user.id);
         checkAdminRole(session.user.id);
       }
-      
+
       setIsLoading(false);
     });
 
@@ -104,7 +105,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUpWithEmail = async (email: string, password: string, displayName?: string) => {
     const redirectUrl = `${window.location.origin}/`;
-    
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -133,22 +134,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // Update profile to mark as non-anonymous
           const { error: profileError } = await supabase
             .from('profiles')
-            .update({ 
-              email, 
+            .update({
+              email,
               is_anonymous: false,
               updated_at: new Date().toISOString()
             })
             .eq('user_id', data.user.id);
-            
+
           if (profileError) {
             console.error('Erro ao atualizar perfil:', profileError);
           }
-          
+
           await supabase.auth.refreshSession();
         }
         return { error: null };
-      } 
-      
+      }
+
       // Scenario 2: No user logged in -> Create New Account (SignUp)
       else {
         const redirectUrl = `${window.location.origin}/`;
@@ -164,7 +165,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
 
         if (error) throw error;
-        
+
         // If auto-confirm is on, session might be established immediately
         if (data.session) {
           setSession(data.session);

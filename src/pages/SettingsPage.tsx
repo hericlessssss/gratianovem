@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, Lock, Shield, User, LogOut, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import Layout from '@/components/layout/Layout';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from "@/integrations/supabase/client";
 
 const SettingsPage = () => {
   const { user, profile, isAnonymous, linkEmail, signOut } = useAuth();
@@ -15,7 +16,15 @@ const SettingsPage = () => {
   const [password, setPassword] = useState('');
   const [isLinking, setIsLinking] = useState(false);
   const [quietMode, setQuietMode] = useState(false);
+  const [emailReminders, setEmailReminders] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Sync local state with profile when it loads
+  useEffect(() => {
+    if (profile) {
+      setEmailReminders(profile.email_notifications || false);
+    }
+  }, [profile]);
 
   const handleLinkEmail = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,10 +41,10 @@ const SettingsPage = () => {
         variant: "destructive",
       });
     } else {
-      const message = isAnonymous 
+      const message = isAnonymous
         ? "Sua conta foi vinculada com sucesso! Por favor, faça login para confirmar."
         : "Conta criada com sucesso! Verifique seu email para confirmar.";
-      
+
       setSuccessMessage(message);
       toast({
         title: "Sucesso!",
@@ -43,7 +52,7 @@ const SettingsPage = () => {
       });
       setEmail('');
       setPassword('');
-      
+
       // Optional: Sign out to force re-login flow if desired, 
       // but usually we just want to show the button.
       if (isAnonymous) {
@@ -61,7 +70,7 @@ const SettingsPage = () => {
     }
     toast({
       title: enabled ? "Modo Silencioso Ativado" : "Modo Silencioso Desativado",
-      description: enabled 
+      description: enabled
         ? "Animações reduzidas para uma experiência mais tranquila."
         : "Animações normais restauradas.",
     });
@@ -83,7 +92,7 @@ const SettingsPage = () => {
             <User className="h-5 w-5 text-gold" />
             Conta
           </h2>
-          
+
           <div className="prayer-card">
             {isAnonymous ? (
               <>
@@ -94,7 +103,7 @@ const SettingsPage = () => {
                       Proteja seu Progresso
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                      Você está usando o app anonimamente. Vincule um email para 
+                      Você está usando o app anonimamente. Vincule um email para
                       sincronizar seu progresso entre dispositivos e não perdê-lo.
                     </p>
                   </div>
@@ -172,7 +181,7 @@ const SettingsPage = () => {
                     </p>
                   </div>
                 </div>
-                
+
                 <Button variant="outline" onClick={signOut}>
                   <LogOut className="h-4 w-4 mr-2" />
                   Sair
@@ -187,7 +196,7 @@ const SettingsPage = () => {
           <h2 className="font-display text-xl font-semibold text-foreground mb-4">
             Preferências
           </h2>
-          
+
           <div className="prayer-card space-y-6">
             <div className="flex items-center justify-between">
               <div>
@@ -202,14 +211,45 @@ const SettingsPage = () => {
               />
             </div>
 
-            <div className="flex items-center justify-between opacity-50">
+            <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-medium text-foreground">Lembretes por Email</h3>
                 <p className="text-sm text-muted-foreground">
-                  Receba lembretes diários de oração (em breve)
+                  Receba lembretes diários de oração
                 </p>
               </div>
-              <Switch disabled />
+              <Switch
+                checked={emailReminders}
+                onCheckedChange={async (checked) => {
+                  if (!user) return;
+
+                  // Optimistic update
+                  setEmailReminders(checked);
+
+                  const { error } = await supabase
+                    .from('profiles')
+                    .update({ email_notifications: checked })
+                    .eq('user_id', user.id);
+
+                  if (error) {
+                    // Revert on error
+                    setEmailReminders(!checked);
+                    toast({
+                      title: "Erro ao atualizar permissão",
+                      description: "Não foi possível salvar sua preferência.",
+                      variant: "destructive",
+                    });
+                  } else {
+                    toast({
+                      title: checked ? "Lembretes Ativados" : "Lembretes Desativados",
+                      description: checked
+                        ? "Você receberá lembretes diários em seu email."
+                        : "Você não receberá mais lembretes por email.",
+                    });
+                  }
+                }}
+                disabled={isAnonymous}
+              />
             </div>
           </div>
         </section>
@@ -219,7 +259,7 @@ const SettingsPage = () => {
           <h2 className="font-display text-xl font-semibold text-foreground mb-4">
             Dados
           </h2>
-          
+
           <div className="prayer-card space-y-4">
             <Button variant="outline" disabled className="opacity-50">
               Exportar Meus Dados (em breve)
