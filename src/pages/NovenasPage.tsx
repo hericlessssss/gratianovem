@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Loader2, Search } from 'lucide-react';
+import { ArrowRight, Loader2, Search, MessageCircle, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import Layout from '@/components/layout/Layout';
@@ -137,6 +137,37 @@ const NovenasPage = () => {
                 </Button>
               </div>
             )}
+
+            {/* Request Novena Section */}
+            <div className="prayer-card hover:shadow-lg transition-shadow animate-fade-in-up mt-8">
+              <div className="flex items-start gap-6">
+                <div className="w-20 h-20 rounded-xl bg-gold/10 flex items-center justify-center text-gold text-3xl shrink-0">
+                  <MessageCircle className="w-8 h-8" />
+                </div>
+                <div className="flex-1">
+                  <h2 className="font-display text-2xl font-semibold text-primary mb-2">
+                    Não encontrou a novena que procurava?
+                  </h2>
+                  <p className="text-muted-foreground text-sm mb-4">
+                    Entre em contato conosco! Ficaremos felizes em adicionar sua novena favorita ao aplicativo o mais rápido possível.
+                  </p>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <Button variant="outline" size="sm" className="gap-2 group hover:text-green-600 hover:border-green-600/30" asChild>
+                      <a href="https://wa.me/5561991964111" target="_blank" rel="noopener noreferrer">
+                        <MessageCircle className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                        Pedir pelo WhatsApp
+                      </a>
+                    </Button>
+                    <Button variant="outline" size="sm" className="gap-2" asChild>
+                      <a href="mailto:contato@gratianovem.com.br?subject=Sugestão de Novena">
+                        <Mail className="h-4 w-4" />
+                        Enviar Sugestão via Email
+                      </a>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         ) : (
           <div className="text-center py-12">
