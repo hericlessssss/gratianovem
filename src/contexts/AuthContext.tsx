@@ -108,8 +108,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signUpWithEmail = async (email: string, password: string, displayName?: string) => {
-    const redirectUrl = `${window.location.origin}/`;
-
+    const redirectUrl = `${import.meta.env.VITE_PUBLIC_SITE_URL}/auth`;
+    
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -159,14 +159,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // Scenario 2: No user logged in -> Create New Account (SignUp)
       else {
-        const redirectUrl = `${window.location.origin}/`;
+        const redirectUrl = `${import.meta.env.VITE_PUBLIC_SITE_URL}/auth`;
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             emailRedirectTo: redirectUrl,
             data: {
-              display_name: 'Peregrino', // Default name
+              display_name: 'Peregrino',
             },
           },
         });
