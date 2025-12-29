@@ -110,6 +110,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signUpWithEmail = async (email: string, password: string, displayName?: string) => {
     const redirectUrl = `${import.meta.env.VITE_PUBLIC_SITE_URL}/auth`;
 
+    // Check if email already exists using our custom RPC
+    const { data: emailExists, error: checkError } = await supabase.rpc('check_email_exists', {
+      email_to_check: email
+    });
+
+    if (checkError) {
+      console.error('Error checking email:', checkError);
+      // Continue to try signup if check fails, to avoid blocking user on network error
+    } else if (emailExists) {
+      return { error: new Error('Este e-mail já está registrado.') };
+    }
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
