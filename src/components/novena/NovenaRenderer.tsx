@@ -9,6 +9,7 @@ interface NovenaRendererProps {
     checklistState: Record<string, number | boolean>;
     onChecklistUpdate: (itemId: string, newValue: number | boolean) => void;
     isLocked?: boolean;
+    readOnly?: boolean;
 }
 
 export const NovenaRenderer = ({
@@ -16,6 +17,7 @@ export const NovenaRenderer = ({
     checklistState,
     onChecklistUpdate,
     isLocked = false,
+    readOnly = false,
 }: NovenaRendererProps) => {
     if (!doc || !doc.content) return null;
 
@@ -67,7 +69,8 @@ export const NovenaRenderer = ({
                 if (items.length === 0) return null;
 
                 return (
-                    <div key={index} className={cn("prayer-card mb-8", isLocked && "opacity-60 pointer-events-none")}>
+                    // Use readOnly to disable interaction without heavy visual locking (unless strictly locked)
+                    <div key={index} className={cn("prayer-card mb-8", (isLocked || readOnly) && "opacity-60 pointer-events-none")}>
                         <h4 className="font-display text-lg font-semibold text-primary mb-4">
                             Orações do Dia
                         </h4>
@@ -98,13 +101,14 @@ export const NovenaRenderer = ({
                                                         return (
                                                             <button
                                                                 key={beadNum}
-                                                                onClick={() => onChecklistUpdate(item.id, isActive && count === beadNum ? beadNum - 1 : beadNum)}
-                                                                disabled={isLocked}
+                                                                onClick={() => !readOnly && !isLocked && onChecklistUpdate(item.id, isActive && count === beadNum ? beadNum - 1 : beadNum)}
+                                                                disabled={isLocked || readOnly}
                                                                 className={cn(
                                                                     "w-8 h-8 rounded-full border-2 transition-all duration-300 flex items-center justify-center",
                                                                     isActive
                                                                         ? "bg-gold border-gold text-white shadow-md scale-110"
-                                                                        : "bg-transparent border-gold/30 hover:border-gold/60 text-muted-foreground"
+                                                                        : "bg-transparent border-gold/30 text-muted-foreground",
+                                                                    (!isLocked && !readOnly) && "hover:border-gold/60"
                                                                 )}
                                                             >
                                                                 {isActive && <Check className="w-4 h-4" />}
@@ -116,14 +120,15 @@ export const NovenaRenderer = ({
                                         ) : (
                                             <label
                                                 className={cn(
-                                                    "flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors",
-                                                    currentValue ? "bg-gold/10" : "hover:bg-muted/50"
+                                                    "flex items-center gap-3 p-3 rounded-lg transition-colors",
+                                                    currentValue ? "bg-gold/10" : "",
+                                                    (!isLocked && !readOnly) ? "cursor-pointer hover:bg-muted/50" : "cursor-default"
                                                 )}
                                             >
                                                 <Checkbox
                                                     checked={!!currentValue}
-                                                    onCheckedChange={(checked) => onChecklistUpdate(item.id, !!checked)}
-                                                    disabled={isLocked}
+                                                    onCheckedChange={(checked) => !readOnly && onChecklistUpdate(item.id, !!checked)}
+                                                    disabled={isLocked || readOnly}
                                                     className="data-[state=checked]:bg-gold data-[state=checked]:border-gold"
                                                 />
                                                 <span className={cn(

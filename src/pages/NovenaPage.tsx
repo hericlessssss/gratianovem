@@ -445,6 +445,7 @@ const NovenaPage = () => {
                     checklistState={localChecklist}
                     onChecklistUpdate={handleChecklistUpdate}
                     isLocked={lockStatus.isLocked}
+                    readOnly={!run}
                   />
                 )}
                 {!dayDoc && !isDayLoading && (

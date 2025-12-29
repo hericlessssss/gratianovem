@@ -462,7 +462,7 @@ const SettingsPage = () => {
               className="w-full justify-start"
             >
               {isExporting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
-              Exportar Meus Dados
+              Exportar Dados
             </Button>
 
             <AlertDialog>
