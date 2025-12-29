@@ -1,10 +1,21 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, Lock, Shield, User, LogOut, Loader2, Edit2, Save, X, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, Shield, User, LogOut, Loader2, Edit2, Save, X, Eye, EyeOff, Download, AlertTriangle, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import Layout from '@/components/layout/Layout';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
@@ -94,6 +105,97 @@ const SettingsPage = () => {
       if (isAnonymous) {
         await signOut();
       }
+    }
+  };
+
+  const [isExporting, setIsExporting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleExportData = async () => {
+    if (!user) return;
+    setIsExporting(true);
+
+    try {
+      // Fetch all user data
+      const { data: profileArgs } = await supabase.from('profiles').select('*').eq('user_id', user.id).single();
+      const { data: runs } = await supabase.from('user_novena_runs').select('*').eq('user_id', user.id);
+
+      // We need progress too. Since we might have many progress items, we can fetch them by runs or just all for user via proper RLS if set, 
+      // but 'user_day_progress' usually links to 'run_id'. Let's fetch progress for all runs.
+      // If we don't have RLS allowing 'select * from user_day_progress', we might need to iterate. 
+      // Assuming RLS on user_day_progress relies on run_id -> user_novena_runs -> user_id, getting all usually works if we have a view or policy.
+      // Easiest is to fetch user_day_progress where run_id is in our runs.
+
+      let progressData: any[] = [];
+      if (runs && runs.length > 0) {
+        const runIds = runs.map(r => r.id);
+        const { data: progress } = await supabase.from('user_day_progress').select('*').in('run_id', runIds);
+        progressData = progress || [];
+      }
+
+      const exportObject = {
+        exported_at: new Date().toISOString(),
+        user: {
+          id: user.id,
+          email: user.email,
+          profile: profileArgs
+        },
+        novenas: {
+          runs: runs,
+          progress: progressData
+        }
+      };
+
+      const jsonString = JSON.stringify(exportObject, null, 2);
+      const blob = new Blob([jsonString], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `gratianovem-data-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast({
+        title: "Exportação Concluída",
+        description: "Seus dados foram baixados com sucesso.",
+      });
+
+    } catch (error) {
+      console.error("Export error:", error);
+      toast({
+        title: "Erro na exportação",
+        description: "Não foi possível exportar seus dados no momento.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!user) return;
+    setIsDeleting(true);
+
+    try {
+      const { error } = await supabase.rpc('delete_user_account');
+
+      if (error) throw error;
+
+      await signOut();
+      toast({
+        title: "Conta excluída",
+        description: "Sua conta e dados foram removidos permanentemente.",
+      });
+      // Redirect handled by signOut usually, or global auth state
+    } catch (error: any) {
+      console.error("Delete error:", error);
+      toast({
+        title: "Erro ao excluir",
+        description: error.message || "Ocorreu um erro ao excluir sua conta.",
+        variant: "destructive"
+      });
+      setIsDeleting(false);
     }
   };
 
@@ -353,12 +455,42 @@ const SettingsPage = () => {
           </h2>
 
           <div className="prayer-card space-y-4">
-            <Button variant="outline" disabled className="opacity-50">
-              Exportar Meus Dados (em breve)
+            <Button
+              variant="outline"
+              onClick={handleExportData}
+              disabled={isExporting}
+              className="w-full justify-start"
+            >
+              {isExporting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
+              Exportar Meus Dados
             </Button>
-            <Button variant="ghost" disabled className="text-destructive opacity-50">
-              Excluir Conta (em breve)
-            </Button>
+
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" className="text-destructive hover:text-destructive hover:bg-destructive/10 w-full justify-start">
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Excluir Conta
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="text-destructive flex items-center gap-2">
+                    <AlertTriangle className="h-5 w-5" />
+                    Excluir Conta Permanentemente?
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Esta ação não pode ser desfeita. Isso excluirá permanentemente sua conta e removerá todos os seus dados dos nossos servidores, incluindo histórico de novenas e orações.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDeleteAccount} className="bg-destructive hover:bg-destructive/90 text-white">
+                    {isDeleting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                    Sim, excluir minha conta
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </section>
       </div>
