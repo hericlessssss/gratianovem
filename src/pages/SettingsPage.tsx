@@ -10,6 +10,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from "@/integrations/supabase/client";
 
+import ManageNovenas from '@/components/novena/ManageNovenas';
+import { BookOpen } from 'lucide-react';
+
 const SettingsPage = () => {
   const { user, profile, isAnonymous, linkEmail, signOut } = useAuth();
   const [email, setEmail] = useState('');
@@ -312,6 +315,17 @@ const SettingsPage = () => {
           </div>
         </section>
 
+        {/* Manage Novenas Section */}
+        <section className="mb-10">
+          <h2 className="font-display text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
+            <BookOpen className="h-5 w-5 text-gold" />
+            Gerenciar Novenas
+          </h2>
+          <div className="prayer-card">
+            <ManageNovenas />
+          </div>
+        </section>
+
         {/* Preferences Section */}
         <section className="mb-10">
           <h2 className="font-display text-xl font-semibold text-foreground mb-4">
@@ -391,7 +405,7 @@ const SettingsPage = () => {
           </div>
         </section>
       </div>
-    </Layout>
+    </Layout >
   );
 };
 

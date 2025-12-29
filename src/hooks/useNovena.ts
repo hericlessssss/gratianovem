@@ -229,6 +229,10 @@ export const useMyRuns = () => {
         .from('user_novena_runs')
         .select(`
           *,
+          novenas (
+            title,
+            slug
+          ),
           user_day_progress (
             is_completed
           )
@@ -237,7 +241,10 @@ export const useMyRuns = () => {
         .eq('status', 'in_progress');
 
       if (error) throw error;
-      return data as (NovenaRun & { user_day_progress: { is_completed: boolean }[] })[];
+      return data as (NovenaRun & {
+        user_day_progress: { is_completed: boolean }[];
+        novenas: { title: string; slug: string } | null;
+      })[];
     },
   });
 };
@@ -393,8 +400,6 @@ export const useUpdateDayProgress = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['day-progress', data.run_id, data.day_number] });
       queryClient.invalidateQueries({ queryKey: ['run-progress', data.run_id] });
-      // Invalidate my-runs to update progress bars
-      queryClient.invalidateQueries({ queryKey: ['my-runs', user?.id || 'guest'] });
     },
   });
 };
@@ -407,7 +412,6 @@ export const useCompleteNovenaRun = () => {
   return useMutation({
     mutationFn: async (runId: string) => {
       if (!user) {
-        // Guest mode
         return localNovenaService.updateRunStatus(runId, 'completed') as unknown as NovenaRun;
       }
 
@@ -428,6 +432,71 @@ export const useCompleteNovenaRun = () => {
       const userId = user?.id || 'guest';
       queryClient.invalidateQueries({ queryKey: ['novena-run', data.novena_id, userId] });
       queryClient.invalidateQueries({ queryKey: ['my-runs', userId] });
+      queryClient.invalidateQueries({ queryKey: ['novena-stats', data.novena_id, userId] });
     },
+  });
+};
+
+// Cancel the novena run
+export const useCancelNovenaRun = () => {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async (runId: string) => {
+      if (!user) {
+        // Guest mode - delete or mark cancelled
+        // For simplicity in guest mode we might just remove it
+        return localNovenaService.updateRunStatus(runId, 'abandoned') as unknown as NovenaRun;
+      }
+
+      const { data, error } = await supabase
+        .from('user_novena_runs')
+        .update({
+          status: 'cancelled', // Migration added this status
+          completed_at: new Date().toISOString(), // Mark as finished so index ignore it
+        })
+        .eq('id', runId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as NovenaRun;
+    },
+    onSuccess: (data) => {
+      const userId = user?.id || 'guest';
+      queryClient.invalidateQueries({ queryKey: ['novena-run', data.novena_id, userId] });
+      queryClient.invalidateQueries({ queryKey: ['my-runs', userId] });
+    },
+  });
+};
+
+// Fetch completion stats for a user/novena
+export const useNovenaStats = (novenaId: string | undefined) => {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['novena-stats', novenaId, user?.id],
+    queryFn: async () => {
+      if (!user || !novenaId) return { completion_count: 0, last_completed_at: null };
+
+      // We can query the view strictly or just query runs directly if view migration is optional
+      // Let's rely on the view 'user_novena_stats'
+      const { data, error } = await supabase
+        .from('user_novena_stats')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('novena_id', novenaId)
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') {
+        // Fallback if view doesn't exist? Nah, just throw or return empty
+        console.warn("View user_novena_stats might be missing", error);
+        return { completion_count: 0, last_completed_at: null };
+      }
+
+      return data || { completion_count: 0, last_completed_at: null };
+    },
+    enabled: !!user && !!novenaId
   });
 };

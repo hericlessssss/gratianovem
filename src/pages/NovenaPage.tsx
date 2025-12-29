@@ -14,10 +14,11 @@ import {
   useUpdateDayProgress,
   useRunProgress,
   useCompleteNovenaRun,
-  useDayDocument
+  useDayDocument,
+  useNovenaStats
 } from '@/hooks/useNovena';
 import { toast } from '@/hooks/use-toast';
-import { format, addDays, isBefore, startOfDay } from 'date-fns';
+import { format, addDays, isBefore, startOfDay, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import ChristianCross from '@/components/ui/ChristianCross';
 import { NovenaRenderer } from '@/components/novena/NovenaRenderer';
@@ -63,6 +64,10 @@ const NovenaPage = () => {
   }, [dayDoc]);
 
   // User progress
+
+  // We need stats:
+  const { data: stats } = useNovenaStats(novena?.id);
+
   const { data: run, isLoading: runLoading, refetch: refetchRun } = useNovenaRun(novena?.id);
   const { data: dayProgress, isLoading: progressLoading } = useDayProgress(run?.id, currentDay);
   const { data: allProgress } = useRunProgress(run?.id);
@@ -311,14 +316,48 @@ const NovenaPage = () => {
 
         {/* Start Novena CTA - Always visible if no run, but not blocking content anymore */}
         {!run && (
-          <div className="rounded-lg border bg-gold/10 p-4 mb-6 flex items-center gap-3">
-            <div className="bg-gold/20 p-2 rounded-full shrink-0">
-              <ChristianCross className="h-5 w-5 text-gold-dark" />
+          <div className="rounded-lg border bg-gold/10 p-4 mb-6 flex flex-col gap-4">
+            <div className="flex items-center gap-3">
+              <div className="bg-gold/20 p-2 rounded-full shrink-0">
+                <ChristianCross className="h-5 w-5 text-gold-dark" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-primary">
+                  {stats?.completion_count && stats.completion_count > 0
+                    ? "Jornada Concluída"
+                    : "Modo Visualização"}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {stats?.completion_count && stats.completion_count > 0
+                    ? `Você completou esta novena ${stats.completion_count} vez(es).`
+                    : "Você está visualizando sem salvar progresso."}
+                </p>
+              </div>
             </div>
-            <div>
-              <h3 className="font-semibold text-primary">Modo Visualização</h3>
-              <p className="text-sm text-muted-foreground">Você está visualizando sem salvar progresso.</p>
-            </div>
+
+            {/* Restart / Cooldown Logic */}
+            {stats?.last_completed_at ? (
+              isBefore(new Date(), addDays(new Date(stats.last_completed_at), 7)) ? (
+                <div className="bg-background/50 p-3 rounded border border-gold/20 text-sm text-muted-foreground flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-gold" />
+                  <span>
+                    Você poderá reiniciar esta novena em {
+                      differenceInDays(addDays(new Date(stats.last_completed_at), 7), new Date())
+                    } dias.
+                  </span>
+                </div>
+              ) : (
+                <Button onClick={handleStartNovena} disabled={createRun.isPending} variant="gold" className="w-full sm:w-auto self-start">
+                  {createRun.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Reiniciar Jornada Espiritual
+                </Button>
+              )
+            ) : (
+              // Never completed, so show default "Start" hint (or nothing, leaving the bottom button to handle it)
+              // Actually the bottom button handles the start.
+              // But we can show a specific button here too for clarity.
+              null
+            )}
           </div>
         )}
 

@@ -11,8 +11,8 @@ import ChristianCross from '@/components/ui/ChristianCross';
 const ITEMS_PER_PAGE = 10;
 
 const NovenasPage = () => {
-  const { data: novenas, isLoading, error } = useNovenas();
-  const { data: myRuns } = useMyRuns();
+  const { data: novenas, isLoading: novenasLoading, error } = useNovenas();
+  const { data: myRuns, isLoading: runsLoading } = useMyRuns();
   const { isAdmin } = useAuth();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -29,9 +29,32 @@ const NovenasPage = () => {
     );
   }) || [];
 
+  // Sort: Active runs first (ordered by current day descending), then others
+  const sortedNovenas = [...filteredNovenas].sort((a, b) => {
+    const runA = myRuns?.find(r => r.novena_id === a.id);
+    const runB = myRuns?.find(r => r.novena_id === b.id);
+
+    // Both active
+    if (runA && runB) {
+      const dayA = (runA.user_day_progress?.filter(p => p.is_completed).length || 0) + 1;
+      const dayB = (runB.user_day_progress?.filter(p => p.is_completed).length || 0) + 1;
+      return dayB - dayA; // Descending day
+    }
+
+    // A active, B not
+    if (runA) return -1;
+    // B active, A not
+    if (runB) return 1;
+
+    // Neither active -> keep original order (or alphabetical?)
+    // Let's assume original order is fine (likely ID or Title from backend)
+    return 0;
+  });
+
   // Paginate filtered results
-  const visibleNovenas = filteredNovenas.slice(0, visibleCount);
-  const hasMore = visibleCount < filteredNovenas.length;
+  const visibleNovenas = sortedNovenas.slice(0, visibleCount);
+  const hasMore = visibleCount < sortedNovenas.length;
+  const isLoading = novenasLoading || runsLoading;
 
   const handleLoadMore = () => {
     setVisibleCount(prev => prev + ITEMS_PER_PAGE);
