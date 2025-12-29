@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+supabase/functions/*
+!supabase/functions/import_map.json
+supabase/migrations/archive/
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

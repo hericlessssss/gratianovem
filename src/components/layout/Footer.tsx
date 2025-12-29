@@ -68,7 +68,7 @@ const Footer = () => {
             © {new Date().getFullYear()} Gratia Novem. Todos os direitos reservados.
           </p>
           <p className="text-xs text-muted-foreground flex items-center gap-1">
-            Feito por Héricles Francisco, exclusivamente para a glória de Deus.
+            Feito por Héricles Francisco
           </p>
         </div>
       </div>
