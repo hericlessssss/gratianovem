@@ -2,8 +2,6 @@
 
 **Gratia Novem** é uma aplicação web dedicada à prática de novenas e compartilhamento de testemunhos (por enquanto). Concebida para oferecer uma experiência espiritual profunda, a plataforma possui funcionalidades robustas de acompanhamento devocional.
 
-![Gratia Novem Preview](https://placehold.co/1200x600/f6f5f2/D4AF37?text=Gratia+Novem)
-
 ## Funcionalidades
 
 A aplicação foi desenvolvida pensando na jornada do católico digital, que muitas vezes se perde tanto na constância na oração quanto na qualidade do conteúdo.

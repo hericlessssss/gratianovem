@@ -18,8 +18,8 @@ const Footer = () => {
               </span>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Guiando fiéis através de novenas, um dia de cada vez.
-              Que sua jornada de oração seja abençoada.
+              Guiando fiéis através da prática de oração devocional, um dia de cada vez.
+              Que Deus abençoe sua jornada.
             </p>
           </div>
 
@@ -68,7 +68,7 @@ const Footer = () => {
             © {new Date().getFullYear()} Gratia Novem. Todos os direitos reservados.
           </p>
           <p className="text-xs text-muted-foreground flex items-center gap-1">
-            Feito por Héricles Francisco, com <Heart className="h-3 w-3 text-gold fill-gold" /> para a glória de Deus
+            Feito por Héricles Francisco, exclusivamente para a glória de Deus.
           </p>
         </div>
       </div>
