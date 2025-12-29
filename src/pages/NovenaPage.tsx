@@ -2,31 +2,31 @@ import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Check, Loader2, Shield, Lock, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
 import Layout from '@/components/layout/Layout';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   useNovena,
   useNovenaDays,
-  useDayContent,
-  useDayChecklist,
   useNovenaRun,
   useCreateNovenaRun,
   useDayProgress,
   useUpdateDayProgress,
   useRunProgress,
   useCompleteNovenaRun,
+  useDayDocument
 } from '@/hooks/useNovena';
 import { toast } from '@/hooks/use-toast';
-import { format, addDays, isBefore, startOfDay, parseISO } from 'date-fns';
+import { format, addDays, isBefore, startOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import ChristianCross from '@/components/ui/ChristianCross';
+import { NovenaRenderer } from '@/components/novena/NovenaRenderer';
+import { JSONContent } from '@tiptap/react';
 
 const NovenaPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const { user, isLoading: authLoading, signInAnonymously, isAnonymous } = useAuth();
+  const { user, isLoading: authLoading, isAnonymous } = useAuth();
   const [currentDay, setCurrentDay] = useState(1);
   const [localChecklist, setLocalChecklist] = useState<Record<string, number | boolean>>({});
   const [isInitializing, setIsInitializing] = useState(true);
@@ -37,8 +37,29 @@ const NovenaPage = () => {
 
   // Get current day data
   const currentDayData = days?.find(d => d.day_number === currentDay);
-  const { data: contentBlocks, isLoading: contentLoading } = useDayContent(currentDayData?.id);
-  const { data: checklistItems, isLoading: checklistLoading } = useDayChecklist(currentDayData?.id);
+
+  // Use new hook (assuming PT for now)
+  const { data: dayDoc, isLoading: docLoading } = useDayDocument(currentDayData?.id, 'pt');
+
+  // Helper to extract checklist items from doc
+  const checklistItems = useMemo(() => {
+    if (!dayDoc || !dayDoc.content) return [];
+    let items: any[] = [];
+    dayDoc.content.forEach(node => {
+      if (node.type === 'prayerChecklist' && node.attrs?.items) {
+        items = [...items, ...node.attrs.items];
+      }
+      // If we allow nested checklists later, we'd need recursion
+      if (node.content) {
+        node.content.forEach(child => {
+          if (child.type === 'prayerChecklist' && child.attrs?.items) {
+            items = [...items, ...child.attrs.items];
+          }
+        });
+      }
+    });
+    return items;
+  }, [dayDoc]);
 
   // User progress
   const { data: run, isLoading: runLoading, refetch: refetchRun } = useNovenaRun(novena?.id);
@@ -77,7 +98,10 @@ const NovenaPage = () => {
 
   // Lock Logic
   const lockStatus = useMemo(() => {
-    if (!run || !allProgress) return { isLocked: false, availableAt: null };
+    // PREVIEW MODE: If no run exists, EVERYTHING IS UNLOCKED for viewing
+    if (!run) return { isLocked: false, availableAt: null };
+
+    if (!allProgress) return { isLocked: false, availableAt: null };
 
     // Day 1 is always unlocked if run exists
     if (currentDay === 1) return { isLocked: false, availableAt: null };
@@ -126,16 +150,15 @@ const NovenaPage = () => {
     }
   };
 
-  // Handle checklist toggle (DECOUPLED from completion)
-  // Supports both simple boolean toggle and counter update
+  // Handle checklist toggle
   const handleChecklistUpdate = async (itemId: string, newValue: number | boolean) => {
-    if (!run) return;
-
     const newState = {
       ...localChecklist,
       [itemId]: newValue,
     };
     setLocalChecklist(newState);
+
+    if (!run) return; // Only save to backend if running
 
     try {
       await updateProgress.mutateAsync({
@@ -145,17 +168,25 @@ const NovenaPage = () => {
         isCompleted: false, // Explicitly false
       });
     } catch (error) {
+      // Revert on error if we were saving
+      // For preview mode, no reversion needed as it's local
       setLocalChecklist(localChecklist);
     }
   };
+
+
+
+  // ... (skipping unchanged lines until we hit the syntax error at bottom)
+
 
   // Mark day as complete
   const handleCompleteDay = async () => {
     if (!run || !checklistItems) return;
 
     // Ensure everything is completed visually
+    // Even if checklistItems is empty (legacy data migrated without checklist), we allow completion.
     const allCompleted: Record<string, number | boolean> = {};
-    checklistItems.forEach(item => {
+    checklistItems.forEach((item: any) => {
       // If it has repetition count, set to max, otherwise true
       allCompleted[item.id] = item.repetition_count > 1 ? item.repetition_count : true;
     });
@@ -195,8 +226,9 @@ const NovenaPage = () => {
   const goToNextDay = () => setCurrentDay(prev => Math.min(prev + 1, 9));
 
   // Loading states
+  // We wait for docLoading too
   const isLoading = novenaLoading || daysLoading || authLoading || isInitializing;
-  const isDayLoading = contentLoading || checklistLoading || runLoading || progressLoading;
+  const isDayLoading = docLoading || runLoading || progressLoading;
 
   if (isLoading) {
     return (
@@ -270,33 +302,21 @@ const NovenaPage = () => {
           </div>
         )}
 
-        {/* Start Novena CTA */}
+        {/* Start Novena CTA - Always visible if no run, but not blocking content anymore */}
         {!run && (
-          <div className="prayer-card text-center mb-8">
-            <div className="text-gold flex justify-center mb-4">
-              <ChristianCross className="h-8 w-8" />
+          <div className="rounded-lg border bg-gold/10 p-4 mb-6 flex items-center gap-3">
+            <div className="bg-gold/20 p-2 rounded-full shrink-0">
+              <ChristianCross className="h-5 w-5 text-gold-dark" />
             </div>
-            <h2 className="font-display text-xl font-semibold text-primary mb-2">
-              Iniciar Novena
-            </h2>
-            <p className="text-muted-foreground text-sm mb-6">
-              Ao iniciar, seu progresso será salvo automaticamente.
-            </p>
-            <Button
-              variant="hero-gold"
-              onClick={handleStartNovena}
-              disabled={createRun.isPending}
-            >
-              {createRun.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              ) : null}
-              Começar Dia 1
-            </Button>
+            <div>
+              <h3 className="font-semibold text-primary">Modo Visualização</h3>
+              <p className="text-sm text-muted-foreground">Você está visualizando sem salvar progresso.</p>
+            </div>
           </div>
         )}
 
-        {/* Day Navigation */}
-        {run && (
+        {/* Day Navigation - Always Visible now */}
+        {(run || !run) && (
           <>
             <div className="flex items-center justify-between mb-6">
               <Button
@@ -370,136 +390,20 @@ const NovenaPage = () => {
                 <Loader2 className="h-6 w-6 animate-spin text-gold" />
               </div>
             ) : (
-              <div className={`space-y-6 mb-8 ${lockStatus.isLocked ? 'opacity-75' : ''}`}>
-                {(() => {
-                  const hasChecklistBlock = contentBlocks?.some(b => (b.block_type as string) === 'checklist');
-
-                  const renderChecklist = () => {
-                    if (!checklistItems || checklistItems.length === 0) return null;
-                    return (
-                      <div className={`prayer-card mb-8 ${lockStatus.isLocked ? 'opacity-60 pointer-events-none' : ''}`}>
-                        <h4 className="font-display text-lg font-semibold text-primary mb-4">
-                          Orações do Dia
-                        </h4>
-                        <div className="space-y-6">
-                          {checklistItems.map((item) => {
-                            const isBeadMode = item.repetition_count > 1;
-                            const currentValue = localChecklist[item.id];
-
-                            // Helper to get number value safely
-                            const getCount = () => {
-                              if (typeof currentValue === 'number') return currentValue;
-                              return currentValue ? item.repetition_count : 0;
-                            };
-
-                            const count = getCount();
-
-                            return (
-                              <div key={item.id} className="space-y-2">
-                                {isBeadMode ? (
-                                  // BEAD MODE
-                                  <div className="p-4 rounded-lg bg-gold/5 border border-gold/10">
-                                    <p className="font-medium text-foreground mb-3">
-                                      {item.label_pt || item.label}
-                                    </p>
-                                    <div className="flex flex-wrap gap-3 items-center">
-                                      {Array.from({ length: item.repetition_count }).map((_, idx) => {
-                                        const beadNum = idx + 1;
-                                        const isActive = count >= beadNum;
-                                        return (
-                                          <button
-                                            key={beadNum}
-                                            onClick={() => handleChecklistUpdate(item.id, isActive && count === beadNum ? beadNum - 1 : beadNum)}
-                                            disabled={updateProgress.isPending || isDayComplete || lockStatus.isLocked}
-                                            className={`
-                                            w-8 h-8 rounded-full border-2 transition-all duration-300 flex items-center justify-center
-                                            ${isActive
-                                                ? 'bg-gold border-gold text-white shadow-md scale-110'
-                                                : 'bg-transparent border-gold/30 hover:border-gold/60 text-muted-foreground'}
-                                          `}
-                                          >
-                                            {isActive && <Check className="w-4 h-4" />}
-                                          </button>
-                                        );
-                                      })}
-                                    </div>
-                                  </div>
-                                ) : (
-                                  // CHECKBOX MODE
-                                  <label
-                                    className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${currentValue
-                                      ? 'bg-gold/10'
-                                      : 'hover:bg-muted/50'
-                                      }`}
-                                  >
-                                    <Checkbox
-                                      checked={!!currentValue}
-                                      onCheckedChange={(checked) => handleChecklistUpdate(item.id, !!checked)}
-                                      disabled={updateProgress.isPending || isDayComplete || lockStatus.isLocked}
-                                      className="data-[state=checked]:bg-gold data-[state=checked]:border-gold"
-                                    />
-                                    <span className={`flex-1 ${currentValue ? 'text-muted-foreground line-through' : 'text-foreground'
-                                      }`}>
-                                      {item.label_pt || item.label}
-                                    </span>
-                                  </label>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  };
-
-                  return (
-                    <>
-                      {contentBlocks?.map((block) => {
-                        if ((block.block_type as string) === 'checklist') {
-                          return renderChecklist();
-                        }
-
-                        const content = block.content_pt || block.content;
-                        const formattedContent = content?.replace(/\\n/g, '\n');
-
-                        return (
-                          <div key={block.id}>
-                            {block.block_type === 'paragraph' && (
-                              <p className="text-foreground leading-relaxed whitespace-pre-line">
-                                {formattedContent}
-                              </p>
-                            )}
-                            {block.block_type === 'prayer' && (
-                              <div className="prayer-card">
-                                <p className="text-foreground leading-relaxed whitespace-pre-line">
-                                  {formattedContent}
-                                </p>
-                              </div>
-                            )}
-                            {block.block_type === 'quote' && (
-                              <blockquote className="quote-block">
-                                <p className="text-foreground italic whitespace-pre-line">
-                                  {formattedContent}
-                                </p>
-                              </blockquote>
-                            )}
-                            {block.block_type === 'intention' && (
-                              <div className="intention-block">
-                                <p className="text-sm text-muted-foreground uppercase tracking-wider mb-2">
-                                  Intenção
-                                </p>
-                                <p className="text-foreground leading-relaxed whitespace-pre-line">
-                                  {formattedContent}
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                      {!hasChecklistBlock && renderChecklist()}
-                    </>
-                  );
-                })()}
+              <div className={`mb-8 ${lockStatus.isLocked ? 'opacity-75' : ''}`}>
+                {dayDoc && (
+                  <NovenaRenderer
+                    doc={dayDoc}
+                    checklistState={localChecklist}
+                    onChecklistUpdate={handleChecklistUpdate}
+                    isLocked={lockStatus.isLocked}
+                  />
+                )}
+                {!dayDoc && !isDayLoading && (
+                  <div className="text-center text-muted-foreground py-10">
+                    Conteúdo não disponível.
+                  </div>
+                )}
               </div>
             )}
 
@@ -516,13 +420,19 @@ const NovenaPage = () => {
                   <Button
                     variant="hero-gold"
                     size="xl"
-                    onClick={handleCompleteDay}
-                    disabled={updateProgress.isPending}
+                    onClick={() => {
+                      if (!run) {
+                        handleStartNovena();
+                      } else {
+                        handleCompleteDay();
+                      }
+                    }}
+                    disabled={updateProgress.isPending || createRun.isPending}
                   >
-                    {updateProgress.isPending ? (
+                    {updateProgress.isPending || createRun.isPending ? (
                       <Loader2 className="h-4 w-4 animate-spin mr-2" />
                     ) : null}
-                    Concluir Dia {currentDay}
+                    {!run ? "Iniciar Novena para Concluir" : `Concluir Dia ${currentDay}`}
                   </Button>
                 )}
 
@@ -542,7 +452,7 @@ const NovenaPage = () => {
           </>
         )}
       </div>
-    </Layout>
+    </Layout >
   );
 };
 

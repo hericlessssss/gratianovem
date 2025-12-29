@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { localNovenaService, LocalNovenaRun, LocalDayProgress } from '@/services/localNovenaService';
+import { JSONContent } from '@tiptap/react';
 
 interface Novena {
   id: string;
@@ -147,6 +148,25 @@ export const useDayChecklist = (dayId: string | undefined) => {
 
       if (error) throw error;
       return data as unknown as ChecklistItem[];
+    },
+    enabled: !!dayId,
+  });
+};
+
+// Fetch day document (TipTap JSON)
+export const useDayDocument = (dayId: string | undefined, locale: 'pt' | 'en' = 'pt') => {
+  return useQuery({
+    queryKey: ['day-document', dayId, locale],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('day_documents')
+        .select('doc')
+        .eq('novena_day_id', dayId!)
+        .eq('locale', locale)
+        .maybeSingle();
+
+      if (error) throw error;
+      return (data?.doc ?? null) as JSONContent | null;
     },
     enabled: !!dayId,
   });

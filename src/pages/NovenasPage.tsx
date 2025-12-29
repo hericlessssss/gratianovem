@@ -110,34 +110,37 @@ const NovenasPage = () => {
                 }
 
                 return (
-                  <div
+                  <Link
                     key={novena.id}
-                    className="prayer-card hover:shadow-lg transition-shadow animate-fade-in-up"
+                    to={`/novena/${novena.slug}`}
+                    className="block group"
                   >
-                    <div className="flex items-start gap-4 md:gap-6">
-                      <div className="w-16 h-16 md:w-20 md:h-20 rounded-xl bg-gold/10 flex items-center justify-center text-gold shrink-0">
-                        <ChristianCross className="h-6 w-6 md:h-8 md:w-8" />
-                      </div>
-                      <div className="flex-1">
-                        <h2 className="font-display text-lg md:text-2xl font-semibold text-primary mb-2 line-clamp-2">
-                          {novena.title_pt || novena.title}
-                        </h2>
-                        <p className="text-muted-foreground text-xs md:text-sm mb-4 line-clamp-3">
-                          {novena.description_pt || novena.description}
-                        </p>
-                        <div className="flex flex-wrap items-center gap-3 md:gap-4">
-                          <span className="text-xs text-muted-foreground bg-muted px-3 py-1 rounded-full">
-                            {novena.duration} dias
-                          </span>
-                          <Button asChild variant={buttonVariant} size="sm">
-                            <Link to={`/novena/${novena.slug}`}>
+                    <div
+                      className="prayer-card hover:shadow-lg transition-shadow animate-fade-in-up group-hover:border-gold/30"
+                    >
+                      <div className="flex items-start gap-4 md:gap-6">
+                        <div className="w-16 h-16 md:w-20 md:h-20 rounded-xl bg-gold/10 flex items-center justify-center text-gold shrink-0 transition-colors group-hover:bg-gold/20">
+                          <ChristianCross className="h-6 w-6 md:h-8 md:w-8" />
+                        </div>
+                        <div className="flex-1">
+                          <h2 className="font-display text-lg md:text-2xl font-semibold text-primary mb-2 line-clamp-2 group-hover:text-gold transition-colors">
+                            {novena.title_pt || novena.title}
+                          </h2>
+                          <p className="text-muted-foreground text-xs md:text-sm mb-4 line-clamp-3">
+                            {novena.description_pt || novena.description}
+                          </p>
+                          <div className="flex flex-wrap items-center gap-3 md:gap-4">
+                            <span className="text-xs text-muted-foreground bg-muted px-3 py-1 rounded-full">
+                              {novena.duration} dias
+                            </span>
+                            <div className={buttonVariant === 'gold' || buttonVariant === 'hero-gold' ? "bg-gold text-white shadow hover:bg-gold/90 h-9 px-3 rounded-md inline-flex items-center justify-center text-sm font-medium transition-colors" : "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground h-9 px-3 rounded-md inline-flex items-center justify-center text-sm font-medium transition-colors"}>
                               {buttonText} {buttonIcon}
-                            </Link>
-                          </Button>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </Link>
                 );
               })}
             </div>
