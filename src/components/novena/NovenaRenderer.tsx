@@ -25,8 +25,8 @@ export const NovenaRenderer = ({
                 const Level = `h${node.attrs?.level || 1}` as keyof JSX.IntrinsicElements;
                 return (
                     <Level key={index} className={cn("font-display font-semibold text-primary mb-4",
-                        node.attrs?.level === 1 ? "text-2xl" :
-                            node.attrs?.level === 2 ? "text-xl" : "text-lg")}>
+                        node.attrs?.level === 1 ? "text-lg" :
+                            node.attrs?.level === 2 ? "text-base" : "text-sm")}>
                         {node.content?.map((c) => c.text).join('')}
                     </Level>
                 );
@@ -147,7 +147,7 @@ export const NovenaRenderer = ({
     };
 
     return (
-        <div className="novena-content max-w-none text-lg text-secondary/80 font-body leading-relaxed">
+        <div className="novena-content max-w-none text-sm text-secondary/50 font-body leading-relaxed">
             {/* Automatic Top Ornament */}
             <div className="flex justify-center mb-8 opacity-70">
                 <div
