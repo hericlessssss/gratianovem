@@ -22,7 +22,7 @@ const SettingsPage = () => {
   const [linkName, setLinkName] = useState('');
   const [isLinking, setIsLinking] = useState(false);
   const [quietMode, setQuietMode] = useState(false);
-  const [emailReminders, setEmailReminders] = useState(false);
+
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isEditingName, setIsEditingName] = useState(false);
   const [newName, setNewName] = useState('');
@@ -50,11 +50,7 @@ const SettingsPage = () => {
   };
 
   // Sync local state with profile when it loads
-  useEffect(() => {
-    if (profile) {
-      setEmailReminders(profile.email_notifications || false);
-    }
-  }, [profile]);
+
 
   const handleLinkEmail = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -346,46 +342,7 @@ const SettingsPage = () => {
               />
             </div>
 
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-medium text-foreground">Lembretes por Email</h3>
-                <p className="text-sm text-muted-foreground">
-                  Receba lembretes diários de oração
-                </p>
-              </div>
-              <Switch
-                checked={emailReminders}
-                onCheckedChange={async (checked) => {
-                  if (!user) return;
 
-                  // Optimistic update
-                  setEmailReminders(checked);
-
-                  const { error } = await supabase
-                    .from('profiles')
-                    .update({ email_notifications: checked })
-                    .eq('user_id', user.id);
-
-                  if (error) {
-                    // Revert on error
-                    setEmailReminders(!checked);
-                    toast({
-                      title: "Erro ao atualizar permissão",
-                      description: "Não foi possível salvar sua preferência.",
-                      variant: "destructive",
-                    });
-                  } else {
-                    toast({
-                      title: checked ? "Lembretes Ativados" : "Lembretes Desativados",
-                      description: checked
-                        ? "Você receberá lembretes diários em seu email."
-                        : "Você não receberá mais lembretes por email.",
-                    });
-                  }
-                }}
-                disabled={isAnonymous}
-              />
-            </div>
           </div>
         </section>
 
