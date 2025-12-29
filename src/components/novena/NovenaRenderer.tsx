@@ -49,6 +49,9 @@ export const NovenaRenderer = ({
                                 }
                                 return c.text;
                             }
+                            if (c.type === 'hardBreak') {
+                                return <br />;
+                            }
                             return null;
                         }) : <br />}
                     </p>
