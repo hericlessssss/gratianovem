@@ -27,3 +27,5 @@ Thumbs.db
 
 # Supabase
 .env
+# Documentation
+DEVELOPMENT.md
