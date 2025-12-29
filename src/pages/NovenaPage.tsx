@@ -21,6 +21,7 @@ import { format, addDays, isBefore, startOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import ChristianCross from '@/components/ui/ChristianCross';
 import { NovenaRenderer } from '@/components/novena/NovenaRenderer';
+import { Ornament } from '@/components/ui/Ornaments';
 import { JSONContent } from '@tiptap/react';
 
 const NovenaPage = () => {
@@ -278,6 +279,12 @@ const NovenaPage = () => {
             {novena.title_pt || novena.title}
           </h1>
 
+          {currentDay === 1 && (novena.description_pt || novena.description) && (
+            <p className="text-muted-foreground text-base mt-4 mb-6 leading-relaxed max-w-2xl whitespace-pre-line">
+              {novena.description_pt || novena.description}
+            </p>
+          )}
+
           {/* Progress Bar */}
           <div className="flex items-center gap-4 mt-4">
             <Progress value={progressPercent} className="flex-1 h-2" />
@@ -351,6 +358,8 @@ const NovenaPage = () => {
                 {currentDayData.title_pt || currentDayData.title}
               </h3>
             )}
+
+
 
             {/* LOCKED STATE BANNER */}
             {lockStatus.isLocked && (
