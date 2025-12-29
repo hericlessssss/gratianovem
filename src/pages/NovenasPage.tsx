@@ -119,8 +119,16 @@ const NovenasPage = () => {
                       className="prayer-card hover:shadow-lg transition-shadow animate-fade-in-up group-hover:border-gold/30"
                     >
                       <div className="flex items-start gap-4 md:gap-6">
-                        <div className="w-16 h-16 md:w-20 md:h-20 rounded-xl bg-gold/10 flex items-center justify-center text-gold shrink-0 transition-colors group-hover:bg-gold/20">
-                          <ChristianCross className="h-6 w-6 md:h-8 md:w-8" />
+                        <div className="w-16 h-16 md:w-20 md:h-20 rounded-xl bg-gold/10 flex items-center justify-center text-gold shrink-0 transition-colors group-hover:bg-gold/20 overflow-hidden relative">
+                          {novena.image_url ? (
+                            <img
+                              src={novena.image_url}
+                              alt={novena.title}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <ChristianCross className="h-6 w-6 md:h-8 md:w-8" />
+                          )}
                         </div>
                         <div className="flex-1">
                           <h2 className="font-display text-lg md:text-2xl font-semibold text-primary mb-2 line-clamp-2 group-hover:text-gold transition-colors">

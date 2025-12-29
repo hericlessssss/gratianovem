@@ -25,6 +25,7 @@ interface Novena {
   title_pt: string | null;
   description: string | null;
   description_pt: string | null;
+  image_url: string | null;
   duration: number;
   is_active: boolean;
 }
@@ -151,7 +152,9 @@ const AdminNovenaEditor = () => {
           title_pt: details.title_pt,
           slug: details.slug,
           description: details.description,
+          description: details.description,
           description_pt: details.description_pt,
+          image_url: details.image_url,
           is_active: details.is_active,
         })
         .eq('id', id!);
@@ -442,6 +445,18 @@ const AdminNovenaEditor = () => {
                       }
                       placeholder="sao-jose"
                     />
+                  </div>
+
+                  <div>
+                    <Label>Imagem de Capa (URL)</Label>
+                    <Input
+                      value={novenaDetails.image_url || ''}
+                      onChange={(e) =>
+                        setNovenaDetails({ ...novenaDetails, image_url: e.target.value })
+                      }
+                      placeholder="https://..."
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">Cole o link direto da imagem (Google Drive, Imgur, etc)</p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
