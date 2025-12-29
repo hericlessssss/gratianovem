@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, Lock, Shield, User, LogOut, Loader2 } from 'lucide-react';
+import { Mail, Lock, Shield, User, LogOut, Loader2, Edit2, Save, X, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,10 +14,37 @@ const SettingsPage = () => {
   const { user, profile, isAnonymous, linkEmail, signOut } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [linkName, setLinkName] = useState('');
   const [isLinking, setIsLinking] = useState(false);
   const [quietMode, setQuietMode] = useState(false);
   const [emailReminders, setEmailReminders] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [newName, setNewName] = useState('');
+
+  const saveName = async () => {
+    if (!user || !newName.trim()) return;
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ display_name: newName, updated_at: new Date().toISOString() })
+      .eq('user_id', user.id);
+
+    if (error) {
+      toast({
+        title: "Erro ao atualizar nome",
+        variant: "destructive"
+      });
+    } else {
+      toast({ title: "Nome atualizado!" });
+      setIsEditingName(false);
+      // Force profile refresh by reloading or we assume AuthContext will react to realtime?
+      // AuthContext doesn't listen to realtime profiles, but we can do a hack:
+      window.location.reload();
+    }
+  };
 
   // Sync local state with profile when it loads
   useEffect(() => {
@@ -28,10 +55,20 @@ const SettingsPage = () => {
 
   const handleLinkEmail = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (password !== confirmPassword) {
+      toast({
+        title: "Senhas não conferem",
+        description: "Por favor, verifique se as senhas digitadas são iguais.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLinking(true);
     setSuccessMessage(null);
 
-    const { error } = await linkEmail(email, password);
+    const { error } = await linkEmail(email, password, linkName);
     setIsLinking(false);
 
     if (error) {
@@ -124,11 +161,27 @@ const SettingsPage = () => {
                   ) : (
                     <>
                       <div className="space-y-2">
-                        <Label htmlFor="email">Email</Label>
+                        <Label htmlFor="link-name">Nome</Label>
+                        <div className="relative">
+                          <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            id="link-name"
+                            type="text"
+                            placeholder="Seu nome"
+                            value={linkName}
+                            onChange={(e) => setLinkName(e.target.value)}
+                            required
+                            className="pl-10"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="link-email">Email</Label>
                         <div className="relative">
                           <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                           <Input
-                            id="email"
+                            id="link-email"
                             type="email"
                             placeholder="seu@email.com"
                             value={email}
@@ -145,14 +198,53 @@ const SettingsPage = () => {
                           <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                           <Input
                             id="password"
-                            type="password"
+                            type={showPassword ? "text" : "password"}
                             placeholder="••••••••"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
                             minLength={6}
-                            className="pl-10"
+                            className="pl-10 pr-10"
                           />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none"
+                          >
+                            {showPassword ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Eye className="h-4 w-4" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="confirmPassword">Confirmar Senha</Label>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            id="confirmPassword"
+                            type={showPassword ? "text" : "password"}
+                            placeholder="••••••••"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            required
+                            minLength={6}
+                            className="pl-10 pr-10"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none"
+                          >
+                            {showPassword ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Eye className="h-4 w-4" />
+                            )}
+                          </button>
                         </div>
                       </div>
 
@@ -173,12 +265,41 @@ const SettingsPage = () => {
                     <User className="h-6 w-6" />
                   </div>
                   <div>
-                    <p className="font-medium text-foreground">
-                      {profile?.display_name || 'Peregrino'}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {user?.email}
-                    </p>
+                    <div>
+                      {isEditingName ? (
+                        <div className="flex items-center gap-2">
+                          <Input
+                            value={newName}
+                            onChange={(e) => setNewName(e.target.value)}
+                            className="h-8"
+                          />
+                          <Button size="sm" variant="ghost" onClick={saveName} className="h-8 w-8 p-0">
+                            <Save className="h-4 w-4 text-green-600" />
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={() => setIsEditingName(false)} className="h-8 w-8 p-0">
+                            <X className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 group">
+                          <p className="font-medium text-foreground">
+                            {profile?.display_name || 'Peregrino'}
+                          </p>
+                          <button
+                            onClick={() => {
+                              setNewName(profile?.display_name || '');
+                              setIsEditingName(true);
+                            }}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-muted rounded"
+                          >
+                            <Edit2 className="h-3 w-3 text-muted-foreground" />
+                          </button>
+                        </div>
+                      )}
+                      <p className="text-sm text-muted-foreground">
+                        {user?.email}
+                      </p>
+                    </div>
                   </div>
                 </div>
 

@@ -22,7 +22,7 @@ interface AuthContextType {
   signInAnonymously: () => Promise<{ error: Error | null }>;
   signInWithEmail: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUpWithEmail: (email: string, password: string, displayName?: string) => Promise<{ error: Error | null }>;
-  linkEmail: (email: string, password: string) => Promise<{ error: Error | null }>;
+  linkEmail: (email: string, password: string, displayName?: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -109,7 +109,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUpWithEmail = async (email: string, password: string, displayName?: string) => {
     const redirectUrl = `${import.meta.env.VITE_PUBLIC_SITE_URL}/auth`;
-    
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -117,13 +117,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         emailRedirectTo: redirectUrl,
         data: {
           display_name: displayName || 'Peregrino',
+          email_notifications: true,
         },
       },
     });
     return { error: error as Error | null };
   };
 
-  const linkEmail = async (email: string, password: string) => {
+  const linkEmail = async (email: string, password: string, displayName?: string) => {
     try {
       // Scenario 1: User is logged in (Anonymous) -> Link/Update Account
       if (user) {
@@ -135,12 +136,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (error) throw error;
 
         if (data.user) {
-          // Update profile to mark as non-anonymous
+          // Update profile to mark as non-anonymous and set name
           const { error: profileError } = await supabase
             .from('profiles')
             .update({
               email,
+              display_name: displayName || 'Peregrino',
               is_anonymous: false,
+              email_notifications: true, // Default to true as per requirements
               updated_at: new Date().toISOString()
             })
             .eq('user_id', data.user.id);
@@ -190,9 +193,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    setProfile(null);
-    setIsAdmin(false);
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error("Error signing out:", error);
+    } finally {
+      // Always clear local state, even if server request fails
+      setSession(null);
+      setUser(null);
+      setProfile(null);
+      setIsAdmin(false);
+      localStorage.removeItem('supabase.auth.token'); // Ensure token is gone
+    }
   };
 
   const isAnonymous = profile?.is_anonymous ?? (!user?.email);
