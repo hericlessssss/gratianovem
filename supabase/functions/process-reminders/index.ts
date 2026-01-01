@@ -66,6 +66,26 @@ serve(async (req) => {
 
         console.log(`Found ${runs.length} active runs. Processing generic reminders...`);
 
+        // Explicitly configure for Gmail
+        const transporter = nodemailer.createTransport({
+            host: "smtp.gmail.com",
+            port: 465,
+            secure: true,
+            auth: {
+                user: smtpUser,
+                pass: smtpPass,
+            },
+        });
+
+        // Verify connection configuration
+        try {
+            await transporter.verify();
+            console.log('Server is ready to take our messages');
+        } catch (error) {
+            console.error('SMTP Connection Error:', error);
+            throw error;
+        }
+
         // 2. Group by User to avoid spamming
         // We only want to send ONE email per user, even if they have 5 novenas.
         const usersToRemind = new Map<string, {
