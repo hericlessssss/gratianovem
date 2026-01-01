@@ -8,7 +8,8 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy:functions": "npx supabase functions deploy novena-lifecycle --no-verify-jwt && npx supabase functions deploy process-reminders --no-verify-jwt"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

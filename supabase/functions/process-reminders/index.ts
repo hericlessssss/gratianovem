@@ -44,9 +44,11 @@ serve(async (req) => {
 
         const supabase = createClient(supabaseUrl, supabaseKey);
 
-        // Calculate "Today" as start of day in UTC
+        // Calculate "Today" as start of day in BRT (UTC-3)
+        // 00:00 BRT = 03:00 UTC.
+        // This ensures that if a user prayed at 02:00 UTC (23:00 BRT yesterday), it doesn't count as today.
         const todayStart = new Date();
-        todayStart.setHours(0, 0, 0, 0);
+        todayStart.setUTCHours(3, 0, 0, 0);
 
         // 1. Get all active runs
         const { data: runs, error } = await supabase
@@ -89,8 +91,10 @@ serve(async (req) => {
                 user: smtpUser,
                 pass: smtpPass,
             },
-            logger: true, // log to console
-            debug: true,  // include SMTP traffic in the logs
+            auth: {
+                user: smtpUser,
+                pass: smtpPass,
+            },
         });
 
         // Verify connection configuration
@@ -312,21 +316,7 @@ serve(async (req) => {
                 note: `Se você já fez a Novena hoje, pode ignorar este e-mail. 🙏`,
             });
 
-            // Special Message for Day 5 (Halfway)
-            if (nextDay === 5) {
-                subject = `⛰️ Você já chegou na metade da ${novenaTitle}!`;
 
-                html = reminderEmail({
-                    preheader: `Força! Você chegou no dia 5 de 9 — continue firme na ${novenaTitle}.`,
-                    icon: "⛰️",
-                    heading: "Você está na metade do caminho!",
-                    intro: `<strong>Dia 5 de 9.</strong> A jornada é árdua, mas a recompensa é muito maior.`,
-                    highlight: `Metade concluída • ${novenaTitle}`,
-                    ctaLabel: "Continuar Jornada",
-                    slug: run.novenas?.slug,
-                    note: `Se você já fez a ${novenaTitle} hoje, pode ignorar este e-mail. 🙏`,
-                });
-            }
 
             console.log(`Sending email to ${userEmail} for day ${nextDay}`);
 

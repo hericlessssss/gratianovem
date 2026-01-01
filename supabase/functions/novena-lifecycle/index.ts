@@ -12,15 +12,19 @@ interface WebhookPayload {
     table: string;
     record: {
         id: string;
-        user_id: string;
-        novena_id: string;
-        status: string;
-        started_at: string;
+        user_id?: string;       // Present in runs
+        novena_id?: string;     // Present in runs
+        run_id?: string;        // Present in progress
+        status?: string;        // Present in runs
+        day_number?: number;    // Present in progress
+        is_completed?: boolean; // Present in progress
+        started_at?: string;
         completed_at?: string;
     };
     schema: string;
     old_record?: {
-        status: string;
+        status?: string;
+        is_completed?: boolean;
     };
 }
 
@@ -32,17 +36,24 @@ serve(async (req) => {
 
     try {
         const payload: WebhookPayload = await req.json();
-        const { record, type, old_record } = payload;
+        const { record, type, old_record, table } = payload;
 
-        console.log(`Received webhook: ${type} for run ${record.id}`);
+        console.log(`Received webhook: ${type} on ${table} for id ${record.id}`);
 
         // 1. Identify Event Type
-        let eventType: "START" | "FINISH" | null = null;
+        let eventType: "START" | "FINISH" | "HALFWAY" | null = null;
 
-        if (type === "INSERT" && record.status === "in_progress") {
-            eventType = "START";
-        } else if (type === "UPDATE" && record.status === "completed" && old_record?.status !== "completed") {
-            eventType = "FINISH";
+        if (table === 'user_novena_runs') {
+            if (type === "INSERT" && record.status === "in_progress") {
+                eventType = "START";
+            } else if (type === "UPDATE" && record.status === "completed" && old_record?.status !== "completed") {
+                eventType = "FINISH";
+            }
+        } else if (table === 'user_day_progress') {
+            // Check for Halfway Mark (Day 5 Completed)
+            if (type === "UPDATE" && record.is_completed && !old_record?.is_completed && record.day_number === 5) {
+                eventType = "HALFWAY";
+            }
         }
 
         if (!eventType) {
@@ -66,6 +77,10 @@ serve(async (req) => {
         const supabase = createClient(supabaseUrl, supabaseKey);
 
         // 3. Fetch Data (User Profile & Novena Info)
+        // If event is regarding a Run, record.id is run_id
+        // If event is regarding Progress, record.run_id is run_id
+        const runId = record.run_id || record.id;
+
         const { data: runData, error: runError } = await supabase
             .from("user_novena_runs")
             .select(`
@@ -73,7 +88,7 @@ serve(async (req) => {
                 profiles (display_name, email, email_notifications),
                 novenas (title, slug)
             `)
-            .eq("id", record.id)
+            .eq("id", runId)
             .single();
 
         if (runError || !runData) {
@@ -95,8 +110,6 @@ serve(async (req) => {
         }
 
         // Strict check: if user explicitly disabled notifications (though we enforce true now), respect it if desired.
-        // User requested to enforce it, but good practice to check logic.
-        // If we really want to FORCE it, we can ignore this check, but let's check it for correctness with the DB state.
         if (emailEnabled === false) {
             console.log("User has disabled email notifications. Skipping.");
             return new Response(JSON.stringify({ message: "Notifications disabled" }), {
@@ -111,8 +124,10 @@ serve(async (req) => {
             port: 465,
             secure: true,
             auth: { user: smtpUser, pass: smtpPass },
-            logger: true,
-            debug: true,
+            host: "smtp.gmail.com",
+            port: 465,
+            secure: true,
+            auth: { user: smtpUser, pass: smtpPass },
         });
 
         let subject = "";
@@ -327,6 +342,22 @@ serve(async (req) => {
                 ctaHref: `https://gratianovem.com.br/novena/${novenaSlug}`,
                 ctaLabel: "Ver Minha Novena",
                 quoteHtml: `“Comece fazendo o que é necessário, depois o que é possível, e de repente você estará fazendo o impossível.”<br/><strong>— São Francisco de Assis</strong>`,
+            });
+        } else if (eventType === "HALFWAY") {
+            subject = `⛰️ Você já chegou na metade da ${novenaTitle}!`;
+
+            html = renderEmail({
+                preheader: `Força! Você chegou no dia 5 de 9 — continue firme na ${novenaTitle}.`,
+                icon: "⛰️",
+                heading: "Você está na metade do caminho!",
+                lead: `Parabéns, ${userName}. Você completou 5 dias da ${novenaTitle}.`,
+                paragraphs: [
+                    `A jornada é árdua, mas a recompensa é muito maior.`,
+                    `Continue firme — a intercessão dos santos é poderosa e sua fé está sendo fortalecida a cada dia.`,
+                ],
+                ctaHref: `https://gratianovem.com.br/novena/${novenaSlug}`,
+                ctaLabel: "Continuar Jornada",
+                quoteHtml: `“Quem a Deus tem, nada lhe falta. Só Deus basta.”<br/><strong>— Santa Teresa de Ávila</strong>`,
             });
         } else {
             subject = `🎉 Graça Alcançada: ${novenaTitle} Completada!`;
