@@ -127,7 +127,7 @@ const NovenasPage = () => {
                     buttonText = "Finalizar Novena 🎉";
                     buttonVariant = "hero-gold";
                   } else {
-                    buttonText = `Continuar Dia ${currentDay}`;
+                    buttonText = `Seguir para o dia ${currentDay}`;
                     buttonVariant = "outline";
                   }
                 }

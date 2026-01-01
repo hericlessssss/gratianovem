@@ -33,6 +33,7 @@ const NovenaPage = () => {
   const [currentDay, setCurrentDay] = useState(1);
   const [localChecklist, setLocalChecklist] = useState<Record<string, number | boolean>>({});
   const [hasJumpedToCurrentDay, setHasJumpedToCurrentDay] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   // Fetch novena data
   const { data: novena, isLoading: novenaLoading } = useNovena(slug || '');
@@ -200,10 +201,7 @@ const NovenaPage = () => {
 
       if (currentDay === 9) {
         await completeRun.mutateAsync(run.id);
-        toast({
-          title: "Novena Completa! 🙏",
-          description: "Parabéns por completar a novena. Que São José interceda por você!",
-        });
+        setShowSuccess(true);
       } else {
         toast({
           title: `Dia ${currentDay} Completo!`,
@@ -218,6 +216,49 @@ const NovenaPage = () => {
       });
     }
   };
+
+  if (showSuccess) {
+    return (
+      <Layout>
+        <div className="container max-w-2xl py-20 flex flex-col items-center justify-center text-center animate-in fade-in duration-700">
+          <div className="mb-8 p-6 bg-gold/10 rounded-full">
+            <ChristianCross className="w-16 h-16 text-gold" />
+          </div>
+
+          <h1 className="font-display text-4xl font-semibold text-primary mb-6">
+            Jornada Concluída 🙏
+          </h1>
+
+          <div className="space-y-6 text-muted-foreground text-lg mb-12 max-w-lg mx-auto">
+            <p>
+              Parabéns pela sua perseverança e fé. Você completou estes 9 dias de oração com dedicação.
+            </p>
+            <p className="italic font-medium text-primary/80">
+              "Espere no Senhor, anima-te, e ele fortalecerá o teu coração."
+              <br /><span className="text-sm not-italic mt-1 block">- Salmo 27:14</span>
+            </p>
+            <p>
+              Confie que sua oração foi ouvida. O tempo de Deus é perfeito, e a graça que você busca está sendo cuidada com amor infinito.
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md">
+            <Button asChild variant="outline" className="flex-1 h-12 text-base">
+              <Link to="/novenas">
+                Ver outras Novenas
+              </Link>
+            </Button>
+
+            <Button asChild variant="gold" className="flex-1 h-12 text-base shadow-lg hover:shadow-xl transition-all">
+              <Link to="/testimonials">
+                Deixar Testemunho
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   // Navigation
   const goToPreviousDay = () => setCurrentDay(prev => Math.max(prev - 1, 1));
@@ -328,27 +369,12 @@ const NovenaPage = () => {
             </div>
 
             {/* Restart / Cooldown Logic */}
-            {stats?.last_completed_at ? (
-              isBefore(new Date(), addDays(new Date(stats.last_completed_at), 7)) ? (
-                <div className="bg-background/50 p-3 rounded border border-gold/20 text-sm text-muted-foreground flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-gold" />
-                  <span>
-                    Você poderá reiniciar esta novena em {
-                      differenceInDays(addDays(new Date(stats.last_completed_at), 7), new Date())
-                    } dias.
-                  </span>
-                </div>
-              ) : (
-                <Button onClick={handleStartNovena} disabled={createRun.isPending} variant="gold" className="w-full sm:w-auto self-start">
-                  {createRun.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Reiniciar Jornada Espiritual
-                </Button>
-              )
-            ) : (
-              // Never completed, so show default "Start" hint (or nothing, leaving the bottom button to handle it)
-              // Actually the bottom button handles the start.
-              // But we can show a specific button here too for clarity.
-              null
+            {/* Restart Logic - No Cooldown */}
+            {stats?.completion_count && stats.completion_count > 0 && (
+              <Button onClick={handleStartNovena} disabled={createRun.isPending} variant="gold" className="w-full sm:w-auto self-start">
+                {createRun.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Reiniciar Jornada Espiritual
+              </Button>
             )}
           </div>
         )}
@@ -488,7 +514,7 @@ const NovenaPage = () => {
                     {updateProgress.isPending || createRun.isPending ? (
                       <Loader2 className="h-4 w-4 animate-spin mr-2" />
                     ) : null}
-                    {!run ? "Iniciar Novena para Concluir" : `Concluir Dia ${currentDay}`}
+                    {!run ? "Iniciar Novena" : `Concluir Dia ${currentDay}`}
                   </Button>
                 )}
 

@@ -472,6 +472,7 @@ export const useCancelNovenaRun = () => {
 };
 
 // Fetch completion stats for a user/novena
+// Fetch completion stats for a user/novena
 export const useNovenaStats = (novenaId: string | undefined) => {
   const { user } = useAuth();
 
@@ -495,7 +496,8 @@ export const useNovenaStats = (novenaId: string | undefined) => {
         return { completion_count: 0, last_completed_at: null };
       }
 
-      return data || { completion_count: 0, last_completed_at: null };
+      // Explicitly cast to unknown then to expected shape to break likely bad inference
+      return (data || { completion_count: 0, last_completed_at: null }) as { completion_count: number; last_completed_at: string | null };
     },
     enabled: !!user && !!novenaId
   });
