@@ -64,9 +64,11 @@ const Footer = () => {
         </div>
 
         <div className="mt-12 pt-6 border-t border-border/40 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} Gratia Novem. Todos os direitos reservados.
-          </p>
+          <div className="flex flex-col md:flex-row items-center gap-4 text-xs text-muted-foreground">
+            <p>© {new Date().getFullYear()} Gratia Novem. Todos os direitos reservados.</p>
+            <span className="hidden md:inline">•</span>
+            <p>v{__APP_VERSION__}</p>
+          </div>
           <p className="text-xs text-muted-foreground flex items-center gap-1">
             Feito por Héricles Francisco
           </p>
