@@ -29,9 +29,10 @@ const NovenaPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { user, isLoading: authLoading, isAnonymous } = useAuth();
+  // Navigation State
   const [currentDay, setCurrentDay] = useState(1);
   const [localChecklist, setLocalChecklist] = useState<Record<string, number | boolean>>({});
-  const [isInitializing, setIsInitializing] = useState(true);
+  const [hasJumpedToCurrentDay, setHasJumpedToCurrentDay] = useState(false);
 
   // Fetch novena data
   const { data: novena, isLoading: novenaLoading } = useNovena(slug || '');
@@ -64,24 +65,13 @@ const NovenaPage = () => {
   }, [dayDoc]);
 
   // User progress
-
-  // We need stats:
   const { data: stats } = useNovenaStats(novena?.id);
-
   const { data: run, isLoading: runLoading, refetch: refetchRun } = useNovenaRun(novena?.id);
   const { data: dayProgress, isLoading: progressLoading } = useDayProgress(run?.id, currentDay);
-  const { data: allProgress } = useRunProgress(run?.id);
+  const { data: allProgress, isLoading: allProgressLoading } = useRunProgress(run?.id);
   const createRun = useCreateNovenaRun();
   const updateProgress = useUpdateDayProgress();
   const completeRun = useCompleteNovenaRun();
-
-  // Initialize anonymous auth if needed - DISABLED for true Guest Mode
-  // We now support running without any auth via LocalStorage
-  useEffect(() => {
-    if (!authLoading) {
-      setIsInitializing(false);
-    }
-  }, [authLoading]);
 
   // Load saved checklist state
   useEffect(() => {
@@ -92,21 +82,32 @@ const NovenaPage = () => {
     }
   }, [dayProgress, currentDay]);
 
-  // Auto-advance logic (Only on initial load/mount)
+  // Auto-advance logic: Run once when allProgress is loaded
   useEffect(() => {
-    if (allProgress && allProgress.length > 0 && isInitializing) {
-      const completedDays = allProgress.filter(p => p.is_completed).map(p => p.day_number);
-      const maxCompleted = Math.max(0, ...completedDays);
-      const nextDay = Math.min(maxCompleted + 1, 9);
-      setCurrentDay(nextDay);
+    if (allProgress && !hasJumpedToCurrentDay) {
+      if (allProgress.length > 0) {
+        const completedDays = allProgress.filter(p => p.is_completed).map(p => p.day_number);
+        // If no days completed, max is 0 -> next is 1. If day 1 completed, max is 1 -> next is 2.
+        const maxCompleted = completedDays.length > 0 ? Math.max(...completedDays) : 0;
+
+        // If novena is finished (9 days completed), maybe show day 9 or 1?
+        // User said: "Se ele tá no dia 4... abre dia 4". Implies the day TO DO.
+        // So if day 3 is done, open 4.
+        const nextDay = Math.min(maxCompleted + 1, 9);
+
+        setCurrentDay(nextDay);
+      }
+      setHasJumpedToCurrentDay(true);
     }
-  }, [allProgress, isInitializing]);
+  }, [allProgress, hasJumpedToCurrentDay]);
 
   // Lock Logic
   const lockStatus = useMemo(() => {
-    // PREVIEW MODE: If no run exists, EVERYTHING IS UNLOCKED for viewing
+    // PREVIEW MODE: If no run exists, EVERYTHING IS UNLOCKED for viewing (but ReadOnly handled by prop)
     if (!run) return { isLocked: false, availableAt: null };
 
+    // If we haven't loaded progress yet, don't lock incorrectly, wait?
+    // Safe default is unlocked for day 1, but for others we need checks.
     if (!allProgress) return { isLocked: false, availableAt: null };
 
     // Day 1 is always unlocked if run exists
@@ -120,19 +121,10 @@ const NovenaPage = () => {
       return { isLocked: true, reason: 'previous_incomplete', availableAt: null };
     }
 
-    // Time Lock Calculation
-    if (prevDayProgress.completed_at) {
-      const completedDate = new Date(prevDayProgress.completed_at);
-      // Available at 00:00:00 of the NEXT day after completion
-      const nextDayStart = startOfDay(addDays(completedDate, 1));
-
-      if (isBefore(new Date(), nextDayStart)) {
-        return { isLocked: true, reason: 'time_lock', availableAt: nextDayStart };
-      }
-    }
+    // Time Lock Removed as requested.
+    // Users can proceed immediately after finishing previous day.
 
     return { isLocked: false, availableAt: null };
-
   }, [currentDay, allProgress, run]);
 
 
@@ -233,7 +225,7 @@ const NovenaPage = () => {
 
   // Loading states
   // We wait for docLoading too
-  const isLoading = novenaLoading || daysLoading || authLoading || isInitializing;
+  const isLoading = novenaLoading || daysLoading || authLoading;
   const isDayLoading = docLoading || runLoading || progressLoading;
 
   if (isLoading) {
@@ -391,6 +383,31 @@ const NovenaPage = () => {
               </Button>
             </div>
 
+            {/* Banner: Back to Active Day */}
+            {run && allProgress && (() => {
+              const completedDays = allProgress.filter(p => p.is_completed).map(p => p.day_number);
+              const maxCompleted = completedDays.length > 0 ? Math.max(...completedDays) : 0;
+              const activeDay = Math.min(maxCompleted + 1, 9);
+
+              if (currentDay !== activeDay) {
+                return (
+                  <div
+                    className="mb-6 p-3 bg-primary/5 border border-primary/10 rounded-lg flex items-center justify-between cursor-pointer hover:bg-primary/10 transition-colors"
+                    onClick={() => setCurrentDay(activeDay)}
+                  >
+                    <span className="text-sm text-muted-foreground">
+                      Você está atualmente no <strong>Dia {activeDay}</strong>
+                    </span>
+                    <div className="text-xs font-medium text-primary flex items-center">
+                      Ir para o dia
+                      <ChevronRight className="h-3 w-3 ml-1" />
+                    </div>
+                  </div>
+                );
+              }
+              return null;
+            })()}
+
             {/* Day Title */}
             {currentDayData && (
               <h3 className="font-display text-xl text-center text-gold mb-8">
@@ -409,7 +426,7 @@ const NovenaPage = () => {
                 <h3 className="font-display text-lg font-semibold text-primary mb-2">
                   Dia Bloqueado
                 </h3>
-                {lockStatus.reason === 'previous_incomplete' ? (
+                {lockStatus.reason === 'previous_incomplete' && (
                   <div className="space-y-3">
                     <p className="text-sm text-muted-foreground">
                       Para marcar este dia como concluído, finalize primeiro o <strong>Dia {currentDay - 1}</strong>.
@@ -417,16 +434,6 @@ const NovenaPage = () => {
                     <Button variant="outline" size="sm" onClick={goToPreviousDay}>
                       Ir para o Dia {currentDay - 1}
                     </Button>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    <p className="text-sm text-muted-foreground">
-                      A conclusão deste dia estará disponível a partir de:
-                    </p>
-                    <div className="flex items-center justify-center gap-2 text-gold font-medium bg-background py-1.5 px-3 rounded-lg inline-flex mx-auto border border-gold/10 shadow-sm text-sm">
-                      <Clock className="w-3 h-3" />
-                      {lockStatus.availableAt && format(lockStatus.availableAt, "d 'de' MMMM 'às' HH:mm", { locale: ptBR })}
-                    </div>
                   </div>
                 )}
               </div>
@@ -488,10 +495,10 @@ const NovenaPage = () => {
                 {currentDay < 9 && isDayComplete && (
                   <div className="mt-8 pt-8 border-t">
                     <p className="text-muted-foreground mb-4">
-                      O dia {currentDay + 1} estará disponível amanhã.
+                      Continue sua jornada espiritual.
                     </p>
                     <Button variant="outline" onClick={goToNextDay}>
-                      Ver próximo dia
+                      Ir para o Dia {currentDay + 1}
                       <ChevronRight className="ml-2 h-4 w-4" />
                     </Button>
                   </div>
