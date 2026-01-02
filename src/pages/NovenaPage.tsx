@@ -23,6 +23,7 @@ import { ptBR } from 'date-fns/locale';
 import ChristianCross from '@/components/ui/ChristianCross';
 import { NovenaRenderer } from '@/components/novena/NovenaRenderer';
 import { Ornament } from '@/components/ui/Ornaments';
+import { NovenaHero } from '@/components/novena/NovenaHero';
 import { JSONContent } from '@tiptap/react';
 
 const NovenaPage = () => {
@@ -302,35 +303,16 @@ const NovenaPage = () => {
 
   return (
     <Layout hideFooter>
-      <div className="container py-6 md:py-10 max-w-3xl">
-        {/* Header */}
-        <div className="mb-8">
-          <Link
-            to="/novenas"
-            className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
-          >
-            <ChevronLeft className="h-4 w-4" />
-            Voltar
-          </Link>
+      <NovenaHero
+        title={novena.title_pt || novena.title}
+        description={novena.description_pt || novena.description}
+        imageUrl={novena.image_url}
+        progressPercent={progressPercent}
+        completedDays={completedDays}
+        totalDays={9}
+      />
 
-          <h1 className="font-display text-2xl md:text-3xl font-semibold text-primary mb-2">
-            {novena.title_pt || novena.title}
-          </h1>
-
-          {currentDay === 1 && (novena.description_pt || novena.description) && (
-            <p className="text-muted-foreground text-base mt-4 mb-6 leading-relaxed max-w-2xl whitespace-pre-line">
-              {novena.description_pt || novena.description}
-            </p>
-          )}
-
-          {/* Progress Bar */}
-          <div className="flex items-center gap-4 mt-4">
-            <Progress value={progressPercent} className="flex-1 h-2" />
-            <span className="text-sm text-muted-foreground whitespace-nowrap">
-              {completedDays}/9 dias
-            </span>
-          </div>
-        </div>
+      <div className="container py-8 md:py-12 max-w-3xl">
 
         {/* Anonymous warning - Show for Guest (no user) or Anonymous User */}
         {(isAnonymous || !user) && (

@@ -129,6 +129,7 @@ export default {
         "fade-in-up": "fade-in-up 0.6s ease-out forwards",
         "slide-in-bottom": "slide-in-bottom 0.4s ease-out forwards",
         "pulse-soft": "pulse-soft 2s ease-in-out infinite",
+        "pulse-slow": "pulse-soft 4s ease-in-out infinite",
       },
       typography: {
         DEFAULT: {
