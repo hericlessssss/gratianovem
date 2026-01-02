@@ -134,196 +134,111 @@ serve(async (req) => {
         let html = "";
 
         // Paleta / Identidade (mantendo o dourado e o botão)
-        const GOLD = "#D4AF37";
-        const BG = "#f6f5f2";
-        const CARD_BG = "#ffffff";
-        const TEXT = "#2b2b2b";
-        const MUTED = "#6b7280";
-        const BORDER = "#e7e5e4";
-
-        // Tipografia “clássica” + layout mais “premium”
-        const pageWrap = `
-        margin:0;
-        padding:0;
-        background:${BG};
-        font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
-        color:${TEXT};
-        `;
-
-        const cardStyle = `
-        max-width:600px;
-        width:100%;
-        margin:0 auto;
-        background:${CARD_BG};
-        border:1px solid ${BORDER};
-        border-radius:16px;
-        overflow:hidden;
-        box-shadow:0 14px 34px rgba(17,24,39,.10);
-        `;
-
-        const headerStyle = `
-        padding:28px 28px 18px 28px;
-        background:linear-gradient(135deg, rgba(212,175,55,.18), rgba(255,255,255,1));
-        border-bottom:1px solid ${BORDER};
-        `;
-
-        const brandStyle = `
-        font-size:12px;
-        letter-spacing:.14em;
-        text-transform:uppercase;
-        color:#8b6b00;
-        font-weight:800;
-        `;
-
-        const titleStyle = `
-        margin:8px 0 0 0;
-        font-size:22px;
-        line-height:1.25;
-        font-weight:900;
-        color:#111827;
-        `;
-
-        const bodyStyle = `padding:18px 28px 8px 28px;`;
-
-        const pStyle = `
-        margin:10px 0;
-        font-size:15px;
-        line-height:1.75;
-        color:${TEXT};
-        `;
-
-        const subtleStyle = `
-        margin:10px 0 0 0;
-        font-size:13px;
-        line-height:1.6;
-        color:${MUTED};
-        `;
-
-        const dividerStyle = `height:1px;background:${BORDER};margin:18px 0;`;
-
-        const quoteBox = `
-        margin:18px 0 8px 0;
-        padding:14px 14px;
-        background:rgba(212,175,55,.10);
-        border:1px solid rgba(212,175,55,.25);
-        border-radius:12px;
-        font-size:13px;
-        line-height:1.6;
-        color:${MUTED};
-        `;
-
-        const footerStyle = `
-        padding:16px 28px;
-        background:#fafafa;
-        border-top:1px solid ${BORDER};
-        font-size:12px;
-        line-height:1.6;
-        color:#9ca3af;
-        `;
-
-        // Mantendo cores e “pegada” do botão (mesma base, só com sombra leve)
-        const btnStyle = `
-        background-color: ${GOLD};
-        color: white;
-        padding: 14px 28px;
-        text-decoration: none;
-        border-radius: 4px;
-        font-weight: bold;
-        font-family: sans-serif;
-        display: inline-block;
-        box-shadow: 0 10px 18px rgba(212,175,55,.22);
-        `;
-
-        const h2Style = `color:${GOLD}; font-size:24px; margin:0; text-align:center; font-weight:900;`;
-
-
-        interface RenderEmailParams {
-            preheader: string;
-            icon: string;
-            heading: string;
-            lead: string;
-            paragraphs: string[];
-            ctaHref: string;
-            ctaLabel: string;
-            quoteHtml?: string;
-        }
-
-        // Helper: template base (table-friendly + preheader)
+        // 5. Helper: New Dark/Gold Template
         function renderEmail({ preheader, icon, heading, lead, paragraphs, ctaHref, ctaLabel, quoteHtml }: RenderEmailParams) {
+            // Colors
+            const BG = "#0f172a"; // Deep Blue
+            const CARD = "#ffffff";
+            const TEXT = "#334155";
+            const GOLD = "#d4af37";
+            const GOLD_LIGHT = "rgba(212, 175, 55, 0.1)";
+
             return `
-        <!doctype html>
-        <html lang="pt-BR">
-        <head>
-            <meta charset="utf-8" />
-            <meta name="viewport" content="width=device-width,initial-scale=1" />
-            <title>Gratia Novem</title>
-        </head>
-        <body style="${pageWrap}">
-            <!-- Preheader (texto de preview) -->
-            <span style="display:none!important;visibility:hidden;opacity:0;color:transparent;height:0;width:0;overflow:hidden;">
-            ${preheader}
-            </span>
-
-            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:${BG}; padding:24px 0;">
-            <tr>
-                <td align="center" style="padding:0 14px;">
-                <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="${cardStyle}">
-                    <!-- Header -->
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Gratia Novem</title>
+            </head>
+            <body style="margin: 0; padding: 0; background-color: ${BG}; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+                <span style="display:none!important;visibility:hidden;opacity:0;color:transparent;height:0;width:0;overflow:hidden;">${preheader}</span>
+                <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
                     <tr>
-                    <td style="${headerStyle}">
-                        <div style="${brandStyle}">Gratia Novem</div>
-                        <div style="${titleStyle}">Uma mensagem para sua jornada</div>
-                        <div style="margin-top:10px; text-align:center; font-size:40px;">${icon}</div>
-                    </td>
-                    </tr>
+                        <td align="center" style="padding: 40px 15px;">
+                            <!-- Main Card -->
+                            <table role="presentation" width="100%" max-width="600" border="0" cellspacing="0" cellpadding="0" style="max-width: 500px; background-color: ${CARD}; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
+                                
+                                <!-- Header Icon -->
+                                <tr>
+                                    <td align="center" style="padding: 40px 0 20px 0;">
+                                        <div style="width: 48px; height: 48px; border-radius: 50%; background-color: ${GOLD_LIGHT}; display: flex; align-items: center; justify-content: center; line-height: 48px; font-size: 24px;">
+                                            ${icon}
+                                        </div>
+                                    </td>
+                                </tr>
 
-                    <!-- Body -->
-                    <tr>
-                    <td style="${bodyStyle}">
-                        <h2 style="${h2Style}">${heading}</h2>
+                                <!-- Title -->
+                                <tr>
+                                    <td align="center" style="padding: 0 40px;">
+                                        <h1 style="margin: 0; color: ${GOLD}; font-size: 14px; text-transform: uppercase; letter-spacing: 2px; font-weight: 600;">Gratia Novem</h1>
+                                        <h2 style="margin: 10px 0 0 0; color: #1e293b; font-size: 24px; font-weight: 700;">${heading}</h2>
+                                    </td>
+                                </tr>
 
-                        <p style="${pStyle}">${lead}</p>
+                                <!-- Body -->
+                                <tr>
+                                    <td align="center" style="padding: 20px 40px;">
+                                        <p style="margin: 0 0 16px 0; color: ${TEXT}; font-size: 16px; line-height: 1.6;">
+                                            ${lead}
+                                        </p>
+                                        ${paragraphs.map(p => `
+                                        <p style="margin: 0 0 16px 0; color: ${TEXT}; font-size: 16px; line-height: 1.6;">
+                                            ${p}
+                                        </p>`).join('')}
+                                    </td>
+                                </tr>
 
-                        ${paragraphs
-                    .map((t) => `<p style="${pStyle}">${t}</p>`)
-                    .join("")}
+                                <!-- CTA Button -->
+                                <tr>
+                                    <td align="center" style="padding: 10px 40px 30px 40px;">
+                                        <a href="${ctaHref}" style="display: inline-block; background-color: ${GOLD}; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px; transition: opacity 0.2s;">
+                                            ${ctaLabel}
+                                        </a>
+                                    </td>
+                                </tr>
 
-                        <div style="${dividerStyle}"></div>
+                                <!-- Quote Box -->
+                                ${quoteHtml ? `
+                                <tr>
+                                    <td align="center" style="padding: 0 40px 40px 40px;">
+                                        <div style="background-color: #f8fafc; border-left: 3px solid ${GOLD}; padding: 16px; text-align: left; border-radius: 4px;">
+                                            <p style="margin: 0; color: #64748b; font-style: italic; font-size: 14px; line-height: 1.5;">
+                                                ${quoteHtml}
+                                            </p>
+                                        </div>
+                                    </td>
+                                </tr>` : ''}
 
-                        <div style="text-align:center; padding:6px 0 16px 0;">
-                        <a href="${ctaHref}" style="${btnStyle}" target="_blank" rel="noopener">
-                            ${ctaLabel}
-                        </a>
-                        </div>
+                                <!-- Footer -->
+                                <tr>
+                                    <td style="background-color: #f1f5f9; padding: 20px; text-align: center;">
+                                        <p style="margin: 0; color: #94a3b8; font-size: 12px;">
+                                            Você recebeu este e-mail porque iniciou uma jornada no Gratia Novem.
+                                        </p>
+                                        <p style="margin: 5px 0 0 0; color: #94a3b8; font-size: 12px;">
+                                            © ${new Date().getFullYear()} Gratia Novem
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
 
-                        ${quoteHtml ? `<div style="${quoteBox}">${quoteHtml}</div>` : ""}
-
-                        <p style="${subtleStyle}">
-                        Se você tiver qualquer dúvida, é só responder este e-mail — vamos te ajudar. 🙏
-                        </p>
-                    </td>
-                    </tr>
-
-                    <!-- Footer -->
-                    <tr>
-                    <td style="${footerStyle}">
-                        Você recebeu este e-mail porque iniciou uma jornada no Gratia Novem.
-                        <br/>
-                        <span style="color:#b6b6b6;">© Gratia Novem • gratianovem.com.br</span>
-                    </td>
+                            <!-- Unsubscribe / Brand -->
+                            <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
+                                <tr>
+                                    <td align="center" style="padding-top: 20px;">
+                                        <p style="margin: 0; color: #475569; font-size: 12px;">
+                                            Gratia Novem • Oração e Perseverança
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
                     </tr>
                 </table>
-
-                <div style="height:14px;"></div>
-                <div style="max-width:600px; text-align:center; font-size:11px; color:#9ca3af; padding:0 8px;">
-                    Dica: adicione nosso remetente aos contatos para garantir a entrega na caixa de entrada.
-                </div>
-                </td>
-            </tr>
-            </table>
-        </body>
-        </html>
-        `;
+            </body>
+            </html>
+            `;
         }
 
         if (eventType === "START") {

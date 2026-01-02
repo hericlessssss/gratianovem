@@ -122,90 +122,207 @@ serve(async (req) => {
 
         console.log(`Sending emails to ${usersToRemind.size} unique users.`);
 
-        // 3. Send Generic Motivational Email
+        // 3. Send Emails with Randomized Content
         const results = [];
         let emailsSent = 0;
 
-        // Helper Template Function
-        function reminderEmail({ preheader, icon, heading, intro, highlight, ctaLabel, slug, note }: any) {
-            const GOLD = "#D4AF37";
-            const BG = "#f6f5f2";
-            const BORDER = "#e7e5e4";
-            const TEXT = "#2b2b2b";
+        // --- NEW TEMPLATE DESIGN (Dark/Gold) ---
+        interface EmailVariant {
+            subject: string;
+            heading: string;
+            lead: string;
+            body: string;
+            quote: string;
+        }
 
-            // ... Styles ...
-            const pageWrap = `margin:0;padding:0;background:${BG};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;color:${TEXT};`;
-            const cardStyle = `max-width:600px;width:100%;margin:0 auto;background:#ffffff;border:1px solid ${BORDER};border-radius:16px;overflow:hidden;box-shadow:0 14px 34px rgba(17,24,39,.10);`;
-            const headerStyle = `padding:26px 28px 18px 28px;background:linear-gradient(135deg, rgba(212,175,55,.18), rgba(255,255,255,1));border-bottom:1px solid ${BORDER};`;
-            const brandStyle = `font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#8b6b00;font-weight:800;`;
-            const titleStyle = `margin:10px 0 0 0;font-size:22px;line-height:1.25;font-weight:900;color:#111827;`;
-            const bodyStyle = `padding:18px 28px 8px 28px;`;
-            const pStyle = `margin:10px 0;font-size:15px;line-height:1.75;color:${TEXT};`;
-            const btnStyle = `background-color:${GOLD};color:white;padding:12px 24px;text-decoration:none;border-radius:6px;font-weight:800;display:inline-block;box-shadow:0 10px 18px rgba(212,175,55,.22);`;
-            const pillStyle = `display:inline-block;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:800;color:#8b6b00;background:rgba(212,175,55,.14);border:1px solid rgba(212,175,55,.25);`;
-            const smallStyle = `margin:12px 0 0 0;font-size:12px;line-height:1.6;color:#9ca3af;`;
+        const emailVariants: EmailVariant[] = [
+            {
+                subject: "Sua novena te espera 🙏",
+                heading: "Um momento de paz",
+                lead: "O mundo corre, mas a oração nos acalma.",
+                body: "Reserve 5 minutos do seu dia para se reconectar com o sagrado. Sua novena está à sua espera.",
+                quote: "“A oração é o respiro da alma.” — Santo Agostinho"
+            },
+            {
+                subject: "Não desista agora ✨",
+                heading: "A graça da perseverança",
+                lead: "Cada dia rezado é uma vitória espiritual.",
+                body: "Sabemos que a rotina é pesada, mas a constância traz frutos que duram para sempre. Continue firme!",
+                quote: "“Quem a Deus tem, nada lhe falta.” — Santa Teresa d’Ávila"
+            },
+            {
+                subject: "Um convite especial para você 🕊️",
+                heading: "Deus tem um encontro com você",
+                lead: "Ele espera por este momento o dia todo.",
+                body: "Não deixe para depois o que pode transformar seu dia agora. Sua novena é um canal de graça.",
+                quote: "“Fizeste-nos para Ti, e inquieto está o nosso coração enquanto não repousa em Ti.”"
+            },
+            {
+                subject: "Sua jornada continua 🕯️",
+                heading: "Passo a passo",
+                lead: "A fé se constrói no dia a dia.",
+                body: "Você já caminhou até aqui. Dê mais um passo hoje na sua jornada de oração.",
+                quote: "“Comece fazendo o que é necessário, depois o que é possível, e de repente você estará fazendo o impossível.” — São Francisco"
+            },
+            {
+                subject: "Precisando de força? 💪",
+                heading: "O auxílio vem do Alto",
+                lead: "Nas dificuldades, a oração é nosso escudo.",
+                body: "Entregue suas preocupações de hoje na sua novena. Deixe que Deus cuide do resto.",
+                quote: "“Tudo posso naquele que me fortalece.” — Filipenses 4:13"
+            },
+            {
+                subject: "A intercessão dos santos 🌹",
+                heading: "Você não está só",
+                lead: "Os santos rezam conosco e por nós.",
+                body: "Peça a intercessão do santo da sua novena hoje. O céu está atento à sua voz.",
+                quote: "“Sede alegres na esperança, pacientes na tribulação, perseverantes na oração.”"
+            },
+            {
+                subject: "Foco no que importa ✝️",
+                heading: "Priorize sua alma",
+                lead: "Muitas coisas nos distraem, mas só uma é necessária.",
+                body: "Deixe o celular de lado por alguns minutos e volte seu coração para o que é eterno.",
+                quote: "“Buscai primeiro o Reino de Deus, e tudo o mais vos será acrescentado.”"
+            },
+            {
+                subject: "Seu progresso espiritual 📈",
+                heading: "Cada Ave-Maria conta",
+                lead: "Nenhuma oração volta vazia.",
+                body: "Mesmo que pareça pouco, sua fidelidade diária está construindo um tesouro no céu. Vamos rezar?",
+                quote: "“Rezar é amar e amar é servir.” — Santa Madre Teresa"
+            },
+            {
+                subject: "Vamos rezar juntos? 🤝",
+                heading: "Comunidade de fé",
+                lead: "Milhares de pessoas estão rezando neste momento.",
+                body: "Una sua voz a essa corrente de oração. Sua participação fortalece a todos nós.",
+                quote: "“Onde dois ou três estiverem reunidos em meu nome, eu estou no meio deles.”"
+            },
+            {
+                subject: "Lembrete de fé 🔔",
+                heading: "Não quebre o ciclo",
+                lead: "A constância é a chave dos milagres.",
+                body: "Você assumiu este compromisso com sua fé. Mantenha a chama acesa hoje.",
+                quote: "“Sê fiel até a morte, e dar-te-ei a coroa da vida.” — Apocalipse 2:10"
+            }
+        ];
+
+        function renderEmail(user: any, variant: EmailVariant) {
+            // Colors
+            const BG = "#0f172a"; // Deep Blue Background (Tailwind slate-900 like)
+            const CARD = "#ffffff";
+            const TEXT = "#334155"; // Slate-700
+            const GOLD = "#d4af37";
+            const GOLD_LIGHT = "rgba(212, 175, 55, 0.1)";
 
             return `
-             <!doctype html>
-             <html lang="pt-BR">
-             <head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /><title>Gratia Novem</title></head>
-             <body style="${pageWrap}">
-                 <span style="display:none!important;visibility:hidden;opacity:0;color:transparent;height:0;width:0;overflow:hidden;">${preheader}</span>
-                 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:${BG}; padding:24px 0;">
-                 <tr><td align="center" style="padding:0 14px;">
-                     <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="${cardStyle}">
-                         <tr><td style="${headerStyle}">
-                             <div style="${brandStyle}">Gratia Novem</div>
-                             <div style="${titleStyle}">${heading}</div>
-                             <div style="margin-top:10px; text-align:center; font-size:38px;">${icon}</div>
-                         </td></tr>
-                         <tr><td style="${bodyStyle}">
-                             <p style="${pStyle}">${intro}</p>
-                             <div style="margin:14px 0 6px 0; text-align:left;"><span style="${pillStyle}">${highlight}</span></div>
-                             <div style="text-align:center; margin:28px 0 10px 0;">
-                                 <a href="https://gratianovem.com.br/novenas" style="${btnStyle}" target="_blank" rel="noopener">${ctaLabel}</a>
-                             </div>
-                             <p style="${smallStyle}">${note}</p>
-                         </td></tr>
-                         <tr><td style="padding:16px 28px; background:#fafafa; border-top:1px solid ${BORDER}; font-size:12px; line-height:1.6; color:#9ca3af;">
-                             Você recebeu este lembrete porque está em uma jornada no Gratia Novem.<br /><span style="color:#b6b6b6;">© Gratia Novem • gratianovem.com.br</span>
-                         </td></tr>
-                     </table>
-                 </td></tr></table>
-             </body></html>`;
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            </head>
+            <body style="margin: 0; padding: 0; background-color: ${BG}; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+                <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
+                    <tr>
+                        <td align="center" style="padding: 40px 15px;">
+                            <!-- Main Card -->
+                            <table role="presentation" width="100%" max-width="600" border="0" cellspacing="0" cellpadding="0" style="max-width: 500px; background-color: ${CARD}; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
+                                
+                                <!-- Header Icon -->
+                                <tr>
+                                    <td align="center" style="padding: 40px 0 20px 0;">
+                                        <div style="width: 48px; height: 48px; border-radius: 50%; background-color: ${GOLD_LIGHT}; display: flex; align-items: center; justify-content: center; line-height: 48px; font-size: 24px;">
+                                            ✝️
+                                        </div>
+                                    </td>
+                                </tr>
+
+                                <!-- Title -->
+                                <tr>
+                                    <td align="center" style="padding: 0 40px;">
+                                        <h1 style="margin: 0; color: ${GOLD}; font-size: 14px; text-transform: uppercase; letter-spacing: 2px; font-weight: 600;">Gratia Novem</h1>
+                                        <h2 style="margin: 10px 0 0 0; color: #1e293b; font-size: 24px; font-weight: 700;">${variant.heading}</h2>
+                                    </td>
+                                </tr>
+
+                                <!-- Body -->
+                                <tr>
+                                    <td align="center" style="padding: 20px 40px;">
+                                        <p style="margin: 0 0 16px 0; color: ${TEXT}; font-size: 16px; line-height: 1.6;">
+                                            Olá, <strong>${user.name}</strong>. ${variant.lead}
+                                        </p>
+                                        <p style="margin: 0; color: ${TEXT}; font-size: 16px; line-height: 1.6;">
+                                            ${variant.body}
+                                        </p>
+                                    </td>
+                                </tr>
+
+                                <!-- CTA Button -->
+                                <tr>
+                                    <td align="center" style="padding: 10px 40px 30px 40px;">
+                                        <a href="https://gratianovem.com.br/novenas" style="display: inline-block; background-color: ${GOLD}; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px; transition: opacity 0.2s;">
+                                            Rezar Agora
+                                        </a>
+                                    </td>
+                                </tr>
+
+                                <!-- Quote Box -->
+                                <tr>
+                                    <td align="center" style="padding: 0 40px 40px 40px;">
+                                        <div style="background-color: #f8fafc; border-left: 3px solid ${GOLD}; padding: 16px; text-align: left; border-radius: 4px;">
+                                            <p style="margin: 0; color: #64748b; font-style: italic; font-size: 14px; line-height: 1.5;">
+                                                ${variant.quote}
+                                            </p>
+                                        </div>
+                                    </td>
+                                </tr>
+
+                                <!-- Footer -->
+                                <tr>
+                                    <td style="background-color: #f1f5f9; padding: 20px; text-align: center;">
+                                        <p style="margin: 0; color: #94a3b8; font-size: 12px;">
+                                            Você está recebendo este e-mail porque iniciou uma novena no Gratia Novem.
+                                        </p>
+                                        <p style="margin: 5px 0 0 0; color: #94a3b8; font-size: 12px;">
+                                            © ${new Date().getFullYear()} Gratia Novem
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Unsubscribe / Brand -->
+                            <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
+                                <tr>
+                                    <td align="center" style="padding-top: 20px;">
+                                        <p style="margin: 0; color: #475569; font-size: 12px;">
+                                            Gratia Novem • Oração e Perseverança
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </body>
+            </html>
+            `;
         }
 
         for (const [email, user] of usersToRemind) {
             try {
-                // Determine a creative subject
-                const subjects = [
-                    "🙏 Não pare agora: sua oração está sendo ouvida",
-                    "🕯️ Um convite para estar com Deus hoje",
-                    "✨ A perseverança é a chave da graça",
-                    "🕊️ Continue firme na sua Novena",
-                    "🙌 Deus se agrada de quem persiste",
-                ];
-                // Pick random subject
-                const subject = subjects[Math.floor(Math.random() * subjects.length)];
+                // Select Random Variant
+                const variant = emailVariants[Math.floor(Math.random() * emailVariants.length)];
 
-                // Generic Motivational Content
-                const html = reminderEmail({
-                    preheader: `Sua jornada espiritual continua. Não deixe de rezar hoje.`,
-                    icon: "🕯️",
-                    heading: `Sua jornada continua, ${user.name}.`,
-                    intro: `<strong>Deus não olha para o tempo, mas para o amor com que rezamos.</strong><br/>Continue firme na sua caminhada de fé. Cada dia é um passo mais perto da graça.`,
-                    highlight: "Continue suas Novenas",
-                    ctaLabel: "Ver Minhas Novenas",
-                    slug: "",
-                    note: `Se você já rezou hoje, que Deus abençoe sua fidelidade. Se ainda não, Ele te espera.`,
-                });
+                const html = renderEmail(user, variant);
 
-                console.log(`Sending generic reminder to ${email}`);
+                console.log(`Sending reminder to ${email} with subject: ${variant.subject}`);
 
                 await transporter.sendMail({
                     from: `"Gratia Novem" <${smtpUser}>`,
                     to: email,
-                    subject: subject,
+                    subject: variant.subject,
                     html: html,
                 });
 
