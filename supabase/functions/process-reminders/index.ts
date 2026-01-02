@@ -233,8 +233,11 @@ serve(async (req) => {
                                 <!-- Header Icon -->
                                 <tr>
                                     <td align="center" style="padding: 40px 0 20px 0;">
-                                        <div style="width: 48px; height: 48px; border-radius: 50%; background-color: ${GOLD_LIGHT}; display: flex; align-items: center; justify-content: center; line-height: 48px; font-size: 24px;">
-                                            ✝️
+                                        <div style="width: 48px; height: 48px; border-radius: 50%; background-color: ${GOLD_LIGHT}; display: flex; align-items: center; justify-content: center;">
+                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${GOLD}" stroke-width="2" stroke-linecap="round" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M12 2V22" />
+                                                <path d="M7 8H17" />
+                                            </svg>
                                         </div>
                                     </td>
                                 </tr>
