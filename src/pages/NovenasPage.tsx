@@ -143,9 +143,9 @@ const NovenasPage = () => {
                     >
                       <div className="flex items-start gap-4 md:gap-6">
                         <div className="w-16 h-16 md:w-20 md:h-20 rounded-xl bg-gold/10 flex items-center justify-center text-gold shrink-0 transition-colors group-hover:bg-gold/20 overflow-hidden relative">
-                          {novena.image_url ? (
+                          {novena.cover_image_url ? (
                             <img
-                              src={novena.image_url}
+                              src={novena.cover_image_url}
                               alt={novena.title}
                               className="w-full h-full object-cover"
                             />

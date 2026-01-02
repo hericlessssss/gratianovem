@@ -313,7 +313,7 @@ const NovenaPage = () => {
       <NovenaHero
         title={novena.title_pt || novena.title}
         description={novena.description_pt || novena.description}
-        imageUrl={novena.image_url}
+        imageUrl={novena.cover_image_url}
         progressPercent={progressPercent}
         completedDays={completedDays}
         totalDays={9}

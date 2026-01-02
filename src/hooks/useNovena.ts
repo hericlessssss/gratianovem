@@ -215,14 +215,33 @@ export const useMyRuns = () => {
         // For the homepage/list, we mostly need the runs themselves. 
         // If we need progress stats, we might need to enhance this.
         const localRuns = localNovenaService.getRuns();
+
+        // Fetch details for these novenas to display titles
+        const novenaIds = localRuns.map(r => r.novena_id);
+        let novenaDetails: { id: string; title: string; slug: string }[] = [];
+
+        if (novenaIds.length > 0) {
+          const { data } = await supabase
+            .from('novenas')
+            .select('id, title, slug')
+            .in('id', novenaIds);
+          if (data) novenaDetails = data;
+        }
+
         const runsWithProgress = localRuns.map(run => {
           const progress = localNovenaService.getAllDayProgress(run.id);
+          const details = novenaDetails.find(n => n.id === run.novena_id);
+
           return {
             ...run,
-            user_day_progress: progress.map(p => ({ is_completed: p.is_completed }))
+            user_day_progress: progress.map(p => ({ is_completed: p.is_completed })),
+            novenas: details ? { title: details.title, slug: details.slug } : null
           }
         });
-        return runsWithProgress as (AnyNovenaRun & { user_day_progress: { is_completed: boolean }[] })[];
+        return runsWithProgress as (AnyNovenaRun & {
+          user_day_progress: { is_completed: boolean }[];
+          novenas: { title: string; slug: string } | null;
+        })[];
       }
 
       const { data, error } = await supabase

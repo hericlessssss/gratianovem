@@ -8,7 +8,7 @@ export interface Novena {
     title_pt: string | null;
     description: string | null;
     description_pt: string | null;
-    image_url: string | null;
+    cover_image_url: string | null;
     duration: number;
 }
 
@@ -93,7 +93,7 @@ export const usePopularNovena = () => {
             // 6. Sort results to match frequency/added order
             const sortedNovenas = topNovenaIds
                 .map(id => novenas?.find(n => n.id === id))
-                .filter((n): n is Novena => !!n);
+                .filter(n => !!n) as Novena[];
 
             return sortedNovenas;
         },

@@ -25,7 +25,7 @@ interface Novena {
   title_pt: string | null;
   description: string | null;
   description_pt: string | null;
-  image_url: string | null;
+  cover_image_url: string | null;
   duration: number;
   is_active: boolean;
 }
@@ -117,11 +117,12 @@ const AdminNovenaEditor = () => {
       });
 
       // Fill with fetched data
-      data?.forEach((doc: DayDocument) => {
+      data?.forEach((doc) => {
+        const content = doc.doc as unknown as JSONContent;
         if (doc.locale === 'pt') {
-          grouped[doc.novena_day_id].pt = doc.doc;
+          grouped[doc.novena_day_id].pt = content;
         } else {
-          grouped[doc.novena_day_id].en = doc.doc;
+          grouped[doc.novena_day_id].en = content;
         }
       });
       return grouped;
@@ -152,9 +153,8 @@ const AdminNovenaEditor = () => {
           title_pt: details.title_pt,
           slug: details.slug,
           description: details.description,
-          description: details.description,
           description_pt: details.description_pt,
-          image_url: details.image_url,
+          cover_image_url: details.cover_image_url,
           is_active: details.is_active,
         })
         .eq('id', id!);
@@ -450,9 +450,9 @@ const AdminNovenaEditor = () => {
                   <div>
                     <Label>Imagem de Capa (URL)</Label>
                     <Input
-                      value={novenaDetails.image_url || ''}
+                      value={novenaDetails.cover_image_url || ''}
                       onChange={(e) =>
-                        setNovenaDetails({ ...novenaDetails, image_url: e.target.value })
+                        setNovenaDetails({ ...novenaDetails, cover_image_url: e.target.value })
                       }
                       placeholder="https://..."
                     />

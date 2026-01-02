@@ -62,9 +62,9 @@ const FeaturedNovenasCarousel = ({ novenas, isLoading }: FeaturedNovenasCarousel
                             <div className="h-full bg-primary-foreground/5 backdrop-blur-sm hover:bg-primary-foreground/10 transition-all duration-300 border border-white/10 hover:border-gold/50 rounded-xl p-6 flex flex-col items-start justify-between group hover:-translate-y-1 hover:shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)]">
                                 <div className="w-full">
                                     <div className="mb-6 w-full h-48 md:h-40 rounded-lg overflow-hidden bg-black/20 relative group-hover:shadow-inner transition-all">
-                                        {novena.image_url ? (
+                                        {novena.cover_image_url ? (
                                             <img
-                                                src={novena.image_url}
+                                                src={novena.cover_image_url}
                                                 alt={novena.title}
                                                 className="w-full h-full object-cover object-top opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700"
                                             />

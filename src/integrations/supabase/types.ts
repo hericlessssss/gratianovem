@@ -87,6 +87,41 @@ export type Database = {
           },
         ]
       }
+      day_documents: {
+        Row: {
+          created_at: string
+          doc: Json
+          id: string
+          locale: string
+          novena_day_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          doc: Json
+          id?: string
+          locale: string
+          novena_day_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          doc?: Json
+          id?: string
+          locale?: string
+          novena_day_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "day_documents_novena_day_id_fkey"
+            columns: ["novena_day_id"]
+            isOneToOne: false
+            referencedRelation: "novena_days"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       novena_days: {
         Row: {
           created_at: string
@@ -345,7 +380,15 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      user_novena_stats: {
+        Row: {
+          user_id: string
+          novena_id: string
+          completion_count: number
+          last_completed_at: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {
@@ -360,6 +403,16 @@ export type Database = {
           row_id: string
           increment: boolean
         }
+        Returns: void
+      }
+      check_email_exists: {
+        Args: {
+          email_to_check: string
+        }
+        Returns: boolean
+      }
+      delete_user_account: {
+        Args: Record<PropertyKey, never>
         Returns: void
       }
     }
