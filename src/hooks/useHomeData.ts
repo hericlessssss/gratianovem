@@ -55,21 +55,34 @@ export const usePopularNovena = () => {
                 return (latest || []) as Novena[];
             }
 
-            // 2. Count occurrences
+            // 2. Count occurrences (runs is potentially just the user's runs due to RLS)
             const counts: Record<string, number> = {};
-            runs.forEach((run) => {
+            runs?.forEach((run) => {
                 counts[run.novena_id] = (counts[run.novena_id] || 0) + 1;
             });
 
             // 3. Sort IDs by frequency
-            const topNovenaIds = Object.keys(counts)
+            let topNovenaIds = Object.keys(counts)
                 .sort((a, b) => counts[b] - counts[a])
-                .slice(0, 3); // Top 3
+                .slice(0, 3); // Top 3 from runs
 
-            // If we have fewer than 3, fill with others (optional, but good for slider)
-            // For now, let's just stick to what we found, or fetch at least 3 distinct if needed. 
-            // Logic: Fetch details for these IDs.
+            // 4. Backfill: If we have < 3, fetch more from 'novenas' table to fill the carousel
+            if (topNovenaIds.length < 3) {
+                const limit = 3 - topNovenaIds.length;
+                const { data: extras } = await supabase
+                    .from('novenas')
+                    .select('id')
+                    .eq('is_active', true)
+                    .not('id', 'in', `(${topNovenaIds.length > 0 ? topNovenaIds.join(',') : '00000000-0000-0000-0000-000000000000'})`) // Exclude already found
+                    .order('created_at', { ascending: false })
+                    .limit(limit);
 
+                if (extras) {
+                    topNovenaIds = [...topNovenaIds, ...extras.map(e => e.id)];
+                }
+            }
+
+            // 5. Fetch details for all final IDs
             const { data: novenas, error: novenaError } = await supabase
                 .from('novenas')
                 .select('*')
@@ -77,7 +90,7 @@ export const usePopularNovena = () => {
 
             if (novenaError) throw novenaError;
 
-            // Sort results to match frequency order (Postgres 'IN' doesn't guarantee order)
+            // 6. Sort results to match frequency/added order
             const sortedNovenas = topNovenaIds
                 .map(id => novenas?.find(n => n.id === id))
                 .filter((n): n is Novena => !!n);
