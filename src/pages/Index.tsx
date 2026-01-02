@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import Layout from '@/components/layout/Layout';
 import { useLatestNovena, usePopularNovena } from '@/hooks/useHomeData';
 import ChristianCross from '@/components/ui/ChristianCross';
+import FeaturedNovenasCarousel from '@/components/novena/FeaturedNovenasCarousel';
 
 const Index = () => {
   const { data: latestNovena, isLoading: latestLoading } = useLatestNovena();
@@ -65,43 +66,9 @@ const Index = () => {
 
 
 
-      {/* Featured Novena (Popular) */}
-      <section className="py-16 md:py-20">
-        <div className="container px-4 md:px-6">
-          <div className="max-w-4xl mx-auto">
-            <div className="prayer-card text-center transition-all duration-500 hover:shadow-gold/10">
-              {popularLoading ? (
-                <div className="py-12 flex justify-center"><Loader2 className="animate-spin text-gold w-8 h-8" /></div>
-              ) : popularNovena ? (
-                <>
-                  <div className="text-gold flex justify-center mb-4">
-                    <ChristianCross className="h-10 w-10 md:h-12 md:w-12" />
-                  </div>
-                  <div className="inline-flex items-center gap-2 px-3 py-1 mb-4 bg-gold/5 rounded-full text-[10px] md:text-xs font-medium text-gold uppercase tracking-wider">
-                    Mais Rezada Pela Comunidade
-                  </div>
-                  <h2 className="font-display text-2xl md:text-3xl font-semibold text-primary mb-4">
-                    {popularNovena.title_pt || popularNovena.title}
-                  </h2>
-                  <p className="text-muted-foreground mb-8 max-w-xl mx-auto text-sm md:text-base">
-                    {popularNovena.description_pt || popularNovena.description}
-                  </p>
-                  <Button asChild variant="gold" size="lg" className="w-full sm:w-auto">
-                    <Link to={`/novena/${popularNovena.slug}`}>
-                      Começar Novena
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Link>
-                  </Button>
-                </>
-              ) : (
-                // Fallback if no data is returned at all
-                <div className="py-8">
-                  <p className="text-muted-foreground">Em breve, novas novenas em destaque.</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+      {/* Featured Novenas Slider */}
+      <section className="py-16 md:py-20 bg-primary shadow-inner">
+        <FeaturedNovenasCarousel novenas={popularNovena || []} isLoading={popularLoading} />
       </section>
 
       {/* CTA */}

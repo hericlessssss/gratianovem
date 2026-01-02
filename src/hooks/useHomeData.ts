@@ -8,6 +8,7 @@ export interface Novena {
     title_pt: string | null;
     description: string | null;
     description_pt: string | null;
+    image_url: string | null;
     duration: number;
 }
 
@@ -30,7 +31,7 @@ export const useLatestNovena = () => {
     });
 };
 
-// Fetch the most popular novena (based on active runs)
+// Fetch the most popular novenas (based on active runs)
 export const usePopularNovena = () => {
     return useQuery({
         queryKey: ['popular-novena'],
@@ -44,15 +45,14 @@ export const usePopularNovena = () => {
             if (runsError) throw runsError;
 
             if (!runs || runs.length === 0) {
-                // Fallback: Return latest if no runs exist
+                // Fallback: Return latest 3 if no runs exist
                 const { data: latest } = await supabase
                     .from('novenas')
                     .select('*')
                     .eq('is_active', true)
                     .order('created_at', { ascending: false })
-                    .limit(1)
-                    .maybeSingle();
-                return latest as Novena | null;
+                    .limit(3);
+                return (latest || []) as Novena[];
             }
 
             // 2. Count occurrences
@@ -61,20 +61,28 @@ export const usePopularNovena = () => {
                 counts[run.novena_id] = (counts[run.novena_id] || 0) + 1;
             });
 
-            // 3. Find top novena ID
-            const topNovenaId = Object.keys(counts).reduce((a, b) =>
-                counts[a] > counts[b] ? a : b
-            );
+            // 3. Sort IDs by frequency
+            const topNovenaIds = Object.keys(counts)
+                .sort((a, b) => counts[b] - counts[a])
+                .slice(0, 3); // Top 3
 
-            // 4. Fetch details
-            const { data: novena, error: novenaError } = await supabase
+            // If we have fewer than 3, fill with others (optional, but good for slider)
+            // For now, let's just stick to what we found, or fetch at least 3 distinct if needed. 
+            // Logic: Fetch details for these IDs.
+
+            const { data: novenas, error: novenaError } = await supabase
                 .from('novenas')
                 .select('*')
-                .eq('id', topNovenaId)
-                .single();
+                .in('id', topNovenaIds);
 
             if (novenaError) throw novenaError;
-            return novena as Novena;
+
+            // Sort results to match frequency order (Postgres 'IN' doesn't guarantee order)
+            const sortedNovenas = topNovenaIds
+                .map(id => novenas?.find(n => n.id === id))
+                .filter((n): n is Novena => !!n);
+
+            return sortedNovenas;
         },
     });
 };
