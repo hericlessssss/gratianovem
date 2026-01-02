@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -22,6 +23,8 @@ export const NovenaHero = ({
     completedDays,
     totalDays
 }: NovenaHeroProps) => {
+    const [isExpanded, setIsExpanded] = useState(false);
+
     return (
         <div className="relative w-full overflow-hidden bg-primary min-h-[400px] flex flex-col justify-end shadow-xl">
             {/* Background Image with Overlay */}
@@ -69,9 +72,17 @@ export const NovenaHero = ({
                 </h1>
 
                 {description && (
-                    <p className="text-lg text-white/80 leading-relaxed max-w-2xl mb-10 line-clamp-4 md:line-clamp-none font-light">
-                        {description}
-                    </p>
+                    <div className="mb-10 max-w-2xl">
+                        <p className={`text-lg text-white/80 leading-relaxed font-light transition-all duration-300 ${isExpanded ? '' : 'line-clamp-3 md:line-clamp-none'}`}>
+                            {description}
+                        </p>
+                        <button
+                            onClick={() => setIsExpanded(!isExpanded)}
+                            className="mt-2 text-sm font-medium text-gold hover:text-gold/80 md:hidden flex items-center gap-1 focus:outline-none"
+                        >
+                            {isExpanded ? 'Ler menos' : 'Ler mais'}
+                        </button>
+                    </div>
                 )}
 
                 {/* Progress Section Integrated */}
