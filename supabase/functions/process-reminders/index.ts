@@ -94,7 +94,7 @@ serve(async (req) => {
             runIds: string[];
         }>();
 
-        for (const run of runs as any) {
+        for (const run of runs as unknown as UserRun[]) {
             // Check if reminder was already sent "Today" (BRT) for this run
             if (run.last_reminder_sent_at) {
                 const lastSent = new Date(run.last_reminder_sent_at);
@@ -208,7 +208,7 @@ serve(async (req) => {
             }
         ];
 
-        function renderEmail(user: any, variant: EmailVariant) {
+        function renderEmail(user: { name: string }, variant: EmailVariant) {
             // Colors
             const BG = "#0f172a"; // Deep Blue Background (Tailwind slate-900 like)
             const CARD = "#ffffff";
@@ -351,9 +351,9 @@ serve(async (req) => {
             status: 200,
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Error processing reminders:", error);
-        return new Response(JSON.stringify({ error: error.message }), {
+        return new Response(JSON.stringify({ error: (error as Error).message }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
             status: 500,
         });

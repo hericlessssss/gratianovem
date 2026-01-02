@@ -47,9 +47,16 @@ const NovenaPage = () => {
   const { data: dayDoc, isLoading: docLoading } = useDayDocument(currentDayData?.id, 'pt');
 
   // Helper to extract checklist items from doc
+  // Helper to extract checklist items from doc
+  interface ChecklistItem {
+    id: string;
+    repetition_count: number;
+    [key: string]: unknown;
+  }
+
   const checklistItems = useMemo(() => {
     if (!dayDoc || !dayDoc.content) return [];
-    let items: any[] = [];
+    let items: ChecklistItem[] = [];
     dayDoc.content.forEach(node => {
       if (node.type === 'prayerChecklist' && node.attrs?.items) {
         items = [...items, ...node.attrs.items];
@@ -186,7 +193,7 @@ const NovenaPage = () => {
     // Ensure everything is completed visually
     // Even if checklistItems is empty (legacy data migrated without checklist), we allow completion.
     const allCompleted: Record<string, number | boolean> = {};
-    checklistItems.forEach((item: any) => {
+    checklistItems.forEach((item: ChecklistItem) => {
       // If it has repetition count, set to max, otherwise true
       allCompleted[item.id] = item.repetition_count > 1 ? item.repetition_count : true;
     });

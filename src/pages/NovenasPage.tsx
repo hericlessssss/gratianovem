@@ -119,7 +119,7 @@ const NovenasPage = () => {
                 const currentDay = Math.min(completedDays + 1, 9);
 
                 let buttonText = "Iniciar";
-                let buttonIcon = <ArrowRight className="ml-1 h-4 w-4" />;
+                const buttonIcon = <ArrowRight className="ml-1 h-4 w-4" />;
                 let buttonVariant: "gold" | "outline" | "default" | "destructive" | "secondary" | "ghost" | "link" | "hero-gold" = "gold";
 
                 if (run) {

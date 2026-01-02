@@ -135,6 +135,17 @@ serve(async (req) => {
 
         // Paleta / Identidade (mantendo o dourado e o botão)
         // 5. Helper: New Dark/Gold Template
+        interface RenderEmailParams {
+            preheader: string;
+            icon: string;
+            heading: string;
+            lead: string;
+            paragraphs: string[];
+            ctaHref: string;
+            ctaLabel: string;
+            quoteHtml?: string;
+        }
+
         function renderEmail({ preheader, icon, heading, lead, paragraphs, ctaHref, ctaLabel, quoteHtml }: RenderEmailParams) {
             // Colors
             const BG = "#0f172a"; // Deep Blue
@@ -307,9 +318,9 @@ serve(async (req) => {
             status: 200,
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Error processing lifecycle email:", error);
-        return new Response(JSON.stringify({ error: error.message }), {
+        return new Response(JSON.stringify({ error: (error as Error).message }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
             status: 500,
         });

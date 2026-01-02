@@ -23,7 +23,7 @@ export const NovenaRenderer = ({
 
     const renderNode = (node: JSONContent, index: number) => {
         switch (node.type) {
-            case 'heading':
+            case 'heading': {
                 const Level = `h${node.attrs?.level || 1}` as keyof JSX.IntrinsicElements;
                 return (
                     <Level key={index} className={cn("font-display font-semibold text-primary mb-4",
@@ -32,6 +32,7 @@ export const NovenaRenderer = ({
                         {node.content?.map((c) => c.text).join('')}
                     </Level>
                 );
+            }
             case 'ornament':
                 return <Ornament variant={node.attrs?.variant} key={index} />;
 
@@ -64,9 +65,17 @@ export const NovenaRenderer = ({
                         {node.content?.map((c, i) => renderNode(c, i))}
                     </blockquote>
                 );
-            case 'prayerChecklist':
+            case 'prayerChecklist': {
                 const items = node.attrs?.items || [];
                 if (items.length === 0) return null;
+
+                interface ChecklistItem {
+                    id: string;
+                    repetition_count: number;
+                    label: string;
+                    label_pt?: string;
+                    label_en?: string;
+                }
 
                 return (
                     // Use readOnly to disable interaction without heavy visual locking (unless strictly locked)
@@ -75,7 +84,7 @@ export const NovenaRenderer = ({
                             Orações do Dia
                         </h4>
                         <div className="space-y-6">
-                            {items.map((item: any) => {
+                            {items.map((item: ChecklistItem) => {
                                 const isBeadMode = item.repetition_count > 1;
                                 const currentValue = checklistState[item.id];
 
@@ -145,6 +154,7 @@ export const NovenaRenderer = ({
                         </div>
                     </div>
                 );
+            }
             default:
                 // Fallback for nested content like in 'doc' top level if not iterating content directly
                 if (node.content) {

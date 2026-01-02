@@ -126,7 +126,7 @@ const SettingsPage = () => {
       // Assuming RLS on user_day_progress relies on run_id -> user_novena_runs -> user_id, getting all usually works if we have a view or policy.
       // Easiest is to fetch user_day_progress where run_id is in our runs.
 
-      let progressData: any[] = [];
+      let progressData: unknown[] = [];
       if (runs && runs.length > 0) {
         const runIds = runs.map(r => r.id);
         const { data: progress } = await supabase.from('user_day_progress').select('*').in('run_id', runIds);
@@ -188,11 +188,11 @@ const SettingsPage = () => {
         description: "Sua conta e dados foram removidos permanentemente.",
       });
       // Redirect handled by signOut usually, or global auth state
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Delete error:", error);
       toast({
         title: "Erro ao excluir",
-        description: error.message || "Ocorreu um erro ao excluir sua conta.",
+        description: (error as Error).message || "Ocorreu um erro ao excluir sua conta.",
         variant: "destructive"
       });
       setIsDeleting(false);
